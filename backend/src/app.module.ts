@@ -4,7 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 
 // Config
-import { appConfig, databaseConfig, redisConfig } from './config';
+import { appConfig, databaseConfig } from './config';
 
 // Entities
 import {
@@ -38,7 +38,7 @@ import { DeskModule } from './modules/desk/desk.module';
     ConfigModule.forRoot({
       isGlobal: true,
       ignoreEnvFile: process.env.NODE_ENV === 'production',
-      load: [appConfig, databaseConfig, redisConfig],
+      load: [appConfig, databaseConfig],
       envFilePath: ['.env', '.env.development', '.env.local'],
     }),
 

@@ -7,19 +7,17 @@ export const config = {
   NODE_ENV: 'production',
   PORT: '3000',
   API_PREFIX: 'api/v1',
-  DB_HOST: 'postgres',
+  DB_HOST: '172.16.64.110',
   DB_PORT: '5432',
   DB_USERNAME: 'kutuphane',
-  DB_PASSWORD: 'kutuphane123',
+  DB_PASSWORD: 'kut52upha33ne59282',
   DB_DATABASE: 'kütüphane',
-  /** Tam URL set edildiginde TypeORM buna gore baglanir (docker agi: servis adi `postgres`) */
-  DATABASE_URL: 'postgresql://kutuphane:kutuphane123@postgres:5432/kütüphane',
+  /** Tam URL set edildiginde TypeORM buna gore baglanir */
+  DATABASE_URL:
+    'postgresql://kutuphane:kut52upha33ne59282@172.16.64.110:5432/kütüphane',
   // Uretimde daima false: synchronize semayi otomatik degistirmeye calisir, risklidir. Semayi migration ile yonet.
   DB_SYNCHRONIZE: 'false',
   DB_LOGGING: 'false',
-
-  REDIS_HOST: 'redis',
-  REDIS_PORT: '6379',
 
   JWT_SECRET: 'selcuk-university-library-jwt-prod-2026-xK8vNq3mZ7',
   JWT_EXPIRES_IN: '7d',
