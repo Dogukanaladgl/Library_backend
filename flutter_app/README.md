@@ -12,11 +12,11 @@ Bu klasor, RN `mobile` uygulamasinin Flutter karsiligidir.
 
 ## API
 Varsayilan API base URL:
-- `http://172.20.10.4:3000/api/v1`
+- `http://172.20.10.4:8081/api/v1`
 
 Override etmek icin:
 ```bash
-flutter run --dart-define=API_BASE_URL=http://YOUR_IP:3000/api/v1
+flutter run --dart-define=API_BASE_URL=http://YOUR_IP:8081/api/v1
 ```
 
 ## Not

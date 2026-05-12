@@ -466,7 +466,7 @@ Not: Route path'lerinde Expo Router grup klasorleri (`(tabs)`, `(admin)`, `(staf
 
 ### `api/client.ts`
 - Merkezi HTTP istemcisi.
-- Base URL: `app.json` -> `expo.extra.apiUrl` (ornek: `http://172.20.10.4:3000/api/v1`).
+- Base URL: `app.json` -> `expo.extra.apiUrl` (ornek: `http://172.20.10.4:8081/api/v1`).
 - Authorization: AsyncStorage `authToken` varsa `Bearer`.
 - 401 davranisi:
   - login endpoint disinda token temizleme + `UNAUTHORIZED` event.

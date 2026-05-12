@@ -207,8 +207,8 @@ pnpm run build
 pnpm run start:dev
 ```
 
-Backend: http://localhost:3000  
-Swagger: http://localhost:3000/api/docs
+Backend: http://localhost:8081  
+Swagger: http://localhost:8081/api/docs
 
 ### 4. Web Frontend (Staff Dashboard)
 
@@ -268,7 +268,7 @@ Ayrı ayrı alan: `DB_HOST=postgres`, `DB_PORT=5432`, `DB_USERNAME=kutuphane`, `
 API dokümantasyonuna Swagger UI üzerinden erişebilirsiniz:
 
 ```
-http://localhost:3000/api/docs
+http://localhost:8081/api/docs
 ```
 
 ### Temel Endpoint'ler

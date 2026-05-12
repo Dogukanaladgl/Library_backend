@@ -2,7 +2,7 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('app', () => ({
   nodeEnv: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT || '3000', 10),
+  port: parseInt(process.env.PORT || '8081', 10),
   apiPrefix: process.env.API_PREFIX || 'api/v1',
   
   // JWT
@@ -34,9 +34,8 @@ export default registerAs('app', () => ({
   corsOrigins: process.env.CORS_ORIGINS
     ? process.env.CORS_ORIGINS.split(',').map((origin) => origin.trim())
     : [
-        'http://localhost:3000',
-        'http://localhost:5173',
         'http://localhost:8081',
+        'http://localhost:5173',
         'http://localhost:8082',
         'http://127.0.0.1:8081',
         'http://127.0.0.1:8082',

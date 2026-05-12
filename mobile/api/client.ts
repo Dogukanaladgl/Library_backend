@@ -9,14 +9,14 @@ function getBaseUrl(): string {
   }
 
   if (Platform.OS === 'web') {
-    return 'http://localhost:3000/api/v1';
+    return 'http://localhost:8081/api/v1';
   }
 
   if (__DEV__) {
     if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:3000/api/v1';
+      return 'http://10.0.2.2:8081/api/v1';
     }
-    return 'http://localhost:3000/api/v1';
+    return 'http://localhost:8081/api/v1';
   }
 
   const hostUri =
@@ -26,13 +26,13 @@ function getBaseUrl(): string {
   const host = typeof hostUri === 'string' ? hostUri.split(':')[0] : '';
 
   if (host) {
-    return `http://${host}:3000/api/v1`;
+    return `http://${host}:8081/api/v1`;
   }
 
   console.warn(
     '[apiClient] Could not infer device host IP. Falling back to localhost; set expo extra.apiUrl for real devices.',
   );
-  return 'http://localhost:3000/api/v1';
+  return 'http://localhost:8081/api/v1';
 }
 
 const API_BASE_URL = getBaseUrl();

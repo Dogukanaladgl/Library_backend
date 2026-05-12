@@ -69,6 +69,7 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: development
+      PORT: "8081"
       DB_HOST: ${DB_HOST:-postgres}
       DB_PORT: ${DB_PORT:-5432}
       DB_USERNAME: ${DB_USERNAME:-kutuphane}
@@ -78,7 +79,7 @@ services:
       REDIS_HOST: ${REDIS_HOST:-redis}
       REDIS_PORT: ${REDIS_PORT:-6379}
     ports:
-      - "3000:3000"
+      - "8081:8081"
     # Yerel stack için postgres/redis bloklarını açın ve depends_on ekleyin:
     # depends_on:
     #   postgres:

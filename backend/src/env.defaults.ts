@@ -5,7 +5,7 @@
  */
 export const config = {
   NODE_ENV: 'production',
-  PORT: '3000',
+  PORT: '8081',
   API_PREFIX: 'api/v1',
   DB_HOST: '172.16.64.110',
   DB_PORT: '5432',
