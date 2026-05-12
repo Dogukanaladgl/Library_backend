@@ -25,7 +25,12 @@ export class User {
    * (`sp_find_user`) üzerinden yapılıyor. Alan geriye dönük şema uyumluluğu
    * için tutuluyor; yeni satırlar boş string olarak yazılır.
    */
-  @Column({ name: 'password_hash', length: 255, nullable: true })
+  @Column({
+    type: 'varchar',
+    name: 'password_hash',
+    length: 255,
+    nullable: true,
+  })
   passwordHash: string | null;
 
   @Column({ name: 'full_name', length: 150 })
