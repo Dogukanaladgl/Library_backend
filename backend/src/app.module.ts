@@ -5,6 +5,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 // Config
 import { appConfig, databaseConfig } from './config';
+import { UuidSubscriber } from './database/uuid.subscriber';
 
 // Entities
 import {
@@ -31,6 +32,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { DeskModule } from './modules/desk/desk.module';
+import { SumobAuthModule } from './modules/sumob-auth/sumob-auth.module';
 
 @Module({
   imports: [
@@ -63,6 +65,7 @@ import { DeskModule } from './modules/desk/desk.module';
         const base = {
           type: 'postgres' as const,
           entities,
+          subscribers: [UuidSubscriber],
           synchronize: configService.get('database.synchronize'),
           logging: configService.get('database.logging'),
         };
@@ -85,6 +88,7 @@ import { DeskModule } from './modules/desk/desk.module';
     ScheduleModule.forRoot(),
 
     // Uygulama Modülleri
+    SumobAuthModule,
     AuthModule,
     UsersModule,
     HallsModule,

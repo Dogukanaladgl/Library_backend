@@ -7,7 +7,6 @@ import { User, UserRole } from '../entities/user.entity';
 import { OperatingSchedule, ScheduleType } from '../entities/operating-schedule.entity';
 import { Hall } from '../entities/hall.entity';
 import { Table, TableStatus } from '../entities/table.entity';
-import { hashPassword } from '../../modules/auth/auth.utils';
 
 // Salon gruplarina gore referans koordinatlari
 const HALL_GROUP_COORDINATES = {
@@ -59,56 +58,28 @@ async function loadQrMapFromCsv(): Promise<Map<string, string>> {
   return qrMap;
 }
 
+/**
+ * SUMOB entegrasyonu sonrası login parolası kullanılmıyor; bu seed sadece
+ * admin/staff için kütüphane DB'sinde rol tanımı oluşturur. SUMOB'tan giriş
+ * yapan öğrenciler ilk istekte otomatik olarak oluşturulur (sp_find_user).
+ */
 const SEED_USERS = [
-  {
-    studentNumber: '200000001',
-    fullName: 'Test Öğrenci',
-    role: UserRole.STUDENT,
-    password: 'Student123!',
-  },
-  {
-    studentNumber: '200000002',
-    fullName: 'Ayşe Kara',
-    role: UserRole.STUDENT,
-    password: 'Student123!',
-  },
-  {
-    studentNumber: '200000003',
-    fullName: 'Mehmet Demir',
-    role: UserRole.STUDENT,
-    password: 'Student123!',
-  },
-  {
-    studentNumber: '200000004',
-    fullName: 'Zeynep Yılmaz',
-    role: UserRole.STUDENT,
-    password: 'Student123!',
-  },
-  {
-    studentNumber: '200000005',
-    fullName: 'Can Öztürk',
-    role: UserRole.STUDENT,
-    password: 'Student123!',
-  },
   {
     studentNumber: 'admin001',
     fullName: 'Sistem Yöneticisi',
     role: UserRole.ADMIN,
     isSuperAdmin: true,
-    password: 'Admin123!',
   },
   {
     studentNumber: 'admin002',
     fullName: 'Yardımcı Yönetici',
     role: UserRole.ADMIN,
     isSuperAdmin: false,
-    password: 'Admin123!',
   },
   {
     studentNumber: 'staff001',
     fullName: 'Kütüphane Personeli',
     role: UserRole.STAFF,
-    password: 'Staff123!',
   },
 ];
 
@@ -138,13 +109,12 @@ async function seed() {
       continue;
     }
 
-    const passwordHash = await hashPassword(userData.password);
     const user = userRepo.create({
       studentNumber: userData.studentNumber,
       fullName: userData.fullName,
       role: userData.role,
       isSuperAdmin: !!userData.isSuperAdmin,
-      passwordHash,
+      passwordHash: null,
     });
     await userRepo.save(user);
     console.log(`  [OLUŞTURULDU] ${userData.studentNumber} - ${userData.fullName} (${userData.role})`);
@@ -265,15 +235,9 @@ async function seed() {
   }
 
   console.log('\nSeed tamamlandi!');
-  console.log('\nTest kullanicilari:');
-  console.log('  Ogrenci:  200000001 / Student123!');
-  console.log('  Ogrenci:  200000002 / Student123!');
-  console.log('  Ogrenci:  200000003 / Student123!');
-  console.log('  Ogrenci:  200000004 / Student123!');
-  console.log('  Ogrenci:  200000005 / Student123!');
-  console.log('  Admin:    admin001  / Admin123!');
-  console.log('  Admin:    admin002  / Admin123!');
-  console.log('  Personel: staff001  / Staff123!');
+  console.log('\nNot: Login artık SUMOB üzerinden yapılmakta. Bu seed yalnızca');
+  console.log('admin/staff için rol kaydı oluşturur. Öğrenci kayıtları ilk');
+  console.log('SUMOB girişinde sp_find_user üzerinden otomatik açılır.');
 
   await app.close();
 }

@@ -9,7 +9,6 @@ import { Repository, In, LessThanOrEqual, MoreThanOrEqual, Not } from 'typeorm';
 import {
   User,
   UserRole,
-  UserSession,
   Reservation,
   ReservationStatus,
   Hall,
@@ -26,14 +25,14 @@ import {
   ToggleSpecialPeriodDto,
   UpdateSpecialPeriodDto,
 } from './dto/manage-special-period.dto';
+import { SumobAuthService } from '../sumob-auth/sumob-auth.service';
 
 @Injectable()
 export class AdminService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(UserSession)
-    private readonly sessionRepository: Repository<UserSession>,
+    private readonly sumobAuth: SumobAuthService,
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
     @InjectRepository(Hall)
@@ -95,13 +94,8 @@ export class AdminService {
     qb.skip((page - 1) * limit).take(limit);
 
     const [users, total] = await qb.getManyAndCount();
-    const activeSessions = await this.sessionRepository
-      .createQueryBuilder('s')
-      .select('s.user_id', 'userId')
-      .where('s.expires_at > :now', { now: new Date() })
-      .getRawMany();
-    const activeUserIds = new Set(activeSessions.map((s) => s.userId));
-
+    // SUMOB entegrasyonu sonrası "aktif oturum" kavramı kütüphane DB'sinde tutulmuyor;
+    // gerçek session SUMOB mobil DB'sinde. Listede daima false dönüyoruz.
     const items = users.map((u) => ({
       id: u.id,
       studentNumber: u.studentNumber,
@@ -109,7 +103,7 @@ export class AdminService {
       role: u.role,
       isSuperAdmin: this.isSuperAdminUser(u),
       isActive: u.isActive,
-      hasActiveSession: activeUserIds.has(u.id),
+      hasActiveSession: false,
       createdAt: u.createdAt,
     }));
 
@@ -137,7 +131,9 @@ export class AdminService {
       );
     }
 
-    await this.sessionRepository.delete({ userId });
+    // SUMOB session'ı mobil DB'de tutuluyor; burada yalnızca yerel cache temizliyoruz.
+    // Bir sonraki istekte sp_find_user yeniden çağrılır, SUMOB tarafı oturumu kapattıysa 401 döner.
+    this.sumobAuth.invalidateByUserId(userId);
   }
 
   async updateUserRole(targetUserId: string, newRole: UserRole, actorUserId: string): Promise<any> {
@@ -184,7 +180,7 @@ export class AdminService {
       target.isSuperAdmin = false;
     }
     await this.userRepository.save(target);
-    await this.sessionRepository.delete({ userId: targetUserId });
+    this.sumobAuth.invalidateByUserId(targetUserId);
 
     const hasActiveSession = false;
     return {

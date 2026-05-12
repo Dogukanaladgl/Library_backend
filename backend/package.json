@@ -23,7 +23,12 @@
     "seed:import-qr": "ts-node --project tsconfig.seed.json src/database/seeds/import-qr-from-png.ts",
     "seed:import-qr-csv": "ts-node --project tsconfig.seed.json src/database/seeds/import-qr-from-csv.ts",
     "seed:report-qr": "ts-node --project tsconfig.seed.json src/database/seeds/report-qr-sync.ts",
-    "start:dev:seed": "pnpm run seed && pnpm run start:dev"
+    "start:dev:seed": "pnpm run seed && pnpm run start:dev",
+    "typeorm": "typeorm-ts-node-commonjs -d src/database/data-source.ts",
+    "migration:generate": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:generate",
+    "migration:run": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:run",
+    "migration:run:prod": "typeorm -d dist/database/data-source.js migration:run",
+    "migration:revert": "typeorm-ts-node-commonjs -d src/database/data-source.ts migration:revert"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -39,8 +44,8 @@
     "@nestjs/websockets": "^11.1.10",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
-    "ioredis": "^5.8.2",
     "jimp": "^1.6.0",
+    "mssql": "^12.5.2",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
@@ -95,5 +100,11 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "@nestjs/core",
+      "@scarf/scarf"
+    ]
   }
 }

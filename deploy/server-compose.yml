@@ -1,20 +1,17 @@
-# Sunucuda Actions ile /root/kutuphane/docker-compose.yml (veya $HOME/kutuphane/docker-compose.yml) olarak yazilir.
-# Uygulama env'i image icindeki env.defaults (DATABASE_URL, DB_*) veya guncellemede buraya eklenecek environment ile.
+# Yeni sunucu deploy compose dosyasi.
+# DB harici bir Postgres sunucusunda calisir (172.16.64.110). Redis kullanilmiyor.
 services:
   kutuphane-api:
-    image: ghcr.io/dobszy/kutuphane-api:latest
+    image: ghcr.io/selcuk-dijital/kutuphane-backend:latest
     container_name: kutuphane-api
     restart: unless-stopped
-    networks:
-      - traefik-public
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.kutuphane-api.rule=Host(`kutuphane.aatakan.info`)
-      - traefik.http.routers.kutuphane-api.entrypoints=websecure
-      - traefik.http.routers.kutuphane-api.tls=true
-      - traefik.http.routers.kutuphane-api.tls.certresolver=letsencrypt
-      - traefik.http.services.kutuphane-api.loadbalancer.server.port=3000
-
-networks:
-  traefik-public:
-    external: true
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      DB_HOST: 172.16.64.110
+      DB_PORT: 5432
+      DB_USERNAME: kutuphane
+      DB_PASSWORD: kut52upha33ne59282
+      DB_DATABASE: "Kutuphane"
+      DATABASE_URL: "postgresql://kutuphane:kut52upha33ne59282@172.16.64.110:5432/Kutuphane"

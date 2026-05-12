@@ -11,10 +11,10 @@ export const config = {
   DB_PORT: '5432',
   DB_USERNAME: 'kutuphane',
   DB_PASSWORD: 'kut52upha33ne59282',
-  DB_DATABASE: 'kütüphane',
+  DB_DATABASE: 'Kutuphane',
   /** Tam URL set edildiginde TypeORM buna gore baglanir */
   DATABASE_URL:
-    'postgresql://kutuphane:kut52upha33ne59282@172.16.64.110:5432/kütüphane',
+    'postgresql://kutuphane:kut52upha33ne59282@172.16.64.110:5432/Kutuphane',
   // Uretimde daima false: synchronize semayi otomatik degistirmeye calisir, risklidir. Semayi migration ile yonet.
   DB_SYNCHRONIZE: 'false',
   DB_LOGGING: 'false',

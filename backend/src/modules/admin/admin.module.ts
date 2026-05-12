@@ -5,7 +5,6 @@ import { AdminService } from './admin.service';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
   User,
-  UserSession,
   Reservation,
   Hall,
   Table,
@@ -18,7 +17,6 @@ import {
   imports: [
     TypeOrmModule.forFeature([
       User,
-      UserSession,
       Reservation,
       Hall,
       Table,
