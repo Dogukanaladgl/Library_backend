@@ -23,7 +23,8 @@ export const config = {
   JWT_EXPIRES_IN: '7d',
   QR_SECRET: 'selcuk-library-qr-prod-2026-pR9wLm4nBv',
 
-  CORS_ORIGINS: 'http://193.255.245.32:8081,http://localhost:8081,http://localhost:5173,http://localhost:3000',
+  CORS_ORIGINS:
+    'https://kutuphaneservice.selcuk.edu.tr,http://193.255.245.32:8081,http://localhost:8081,http://localhost:5173,http://localhost:3000',
   SWAGGER_ENABLED: 'true',
 
   LOCATION_MAX_DISTANCE_METERS: '300',

@@ -22,4 +22,7 @@ COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 
 USER nestjs
 EXPOSE 8081
-CMD ["sh", "-c", "node node_modules/typeorm/cli.js -d dist/database/data-source.js migration:run && (node dist/database/seeds/seed.js || echo '[seed] atlandi/hatali, uygulama baslatiliyor'); exec node dist/main.js"]
+# Not: seed komutu kaldirildi. Veritabanindaki veri olduğu gibi korunur;
+# random masa/QR üretimi yapilmaz. Manuel import gerekiyorsa imajda elle
+# `node dist/database/seeds/import-qr-from-csv.js` benzeri çağırılabilir.
+CMD ["sh", "-c", "node node_modules/typeorm/cli.js -d dist/database/data-source.js migration:run && exec node dist/main.js"]

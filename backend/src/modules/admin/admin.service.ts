@@ -1,14 +1,11 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, In, LessThanOrEqual, MoreThanOrEqual, Not } from 'typeorm';
 import {
-  User,
-  UserRole,
   Reservation,
   ReservationStatus,
   Hall,
@@ -25,14 +22,15 @@ import {
   ToggleSpecialPeriodDto,
   UpdateSpecialPeriodDto,
 } from './dto/manage-special-period.dto';
-import { SumobAuthService } from '../sumob-auth/sumob-auth.service';
 
+/**
+ * Library admin servisleri yalnızca rezervasyon/salon/masa/özel dönem
+ * yönetimini kapsar. Kullanıcı bilgileri, oturumları ve rol atamaları
+ * SUMOB mobil DB tarafında yönetildiği için burada yer almaz.
+ */
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly sumobAuth: SumobAuthService,
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
     @InjectRepository(Hall)
@@ -46,154 +44,6 @@ export class AdminService {
     @InjectRepository(OperatingSchedule)
     private readonly scheduleRepository: Repository<OperatingSchedule>,
   ) {}
-
-  // ── Users ──────────────────────────────────────────────────
-
-  /**
-   * Geçiş dönemi uyumluluğu:
-   * - Kalıcı model: isSuperAdmin alanı
-   * - Varsayılan süper admin hesabı: admin001
-   */
-  private isSuperAdminUser(user: User): boolean {
-    return !!user.isSuperAdmin || user.studentNumber === 'admin001';
-  }
-
-  async getUsers(query?: {
-    role?: string;
-    search?: string;
-    page?: string;
-    limit?: string;
-  }): Promise<{
-    items: any[];
-    page: number;
-    limit: number;
-    total: number;
-    hasMore: boolean;
-  }> {
-    const roleRaw = query?.role?.trim().toLowerCase();
-    const role = roleRaw as UserRole | undefined;
-    const allowedRoles = new Set<string>(Object.values(UserRole));
-    if (roleRaw && !allowedRoles.has(roleRaw)) {
-      throw new BadRequestException('Gecersiz role degeri.');
-    }
-
-    const page = Math.max(1, Number.parseInt(query?.page ?? '1', 10) || 1);
-    const limit = Math.min(100, Math.max(1, Number.parseInt(query?.limit ?? '20', 10) || 20));
-    const search = query?.search?.trim();
-
-    const qb = this.userRepository.createQueryBuilder('u');
-    if (role) {
-      qb.andWhere('u.role = :role', { role });
-    }
-    if (search) {
-      qb.andWhere('(u.full_name ILIKE :search OR u.student_number ILIKE :search)', {
-        search: `%${search}%`,
-      });
-    }
-    qb.orderBy('u.createdAt', 'DESC');
-    qb.skip((page - 1) * limit).take(limit);
-
-    const [users, total] = await qb.getManyAndCount();
-    // SUMOB entegrasyonu sonrası "aktif oturum" kavramı kütüphane DB'sinde tutulmuyor;
-    // gerçek session SUMOB mobil DB'sinde. Listede daima false dönüyoruz.
-    const items = users.map((u) => ({
-      id: u.id,
-      studentNumber: u.studentNumber,
-      fullName: u.fullName,
-      role: u.role,
-      isSuperAdmin: this.isSuperAdminUser(u),
-      isActive: u.isActive,
-      hasActiveSession: false,
-      createdAt: u.createdAt,
-    }));
-
-    return {
-      items,
-      page,
-      limit,
-      total,
-      hasMore: page * limit < total,
-    };
-  }
-
-  async forceLogout(userId: string, actorUserId: string): Promise<void> {
-    const [actor, targetUser] = await Promise.all([
-      this.userRepository.findOne({ where: { id: actorUserId } }),
-      this.userRepository.findOne({ where: { id: userId } }),
-    ]);
-    if (!actor) throw new NotFoundException('İşlemi yapan yönetici bulunamadı.');
-    if (!targetUser) throw new NotFoundException('Kullanıcı bulunamadı.');
-
-    const targetIsAdmin = targetUser.role === UserRole.ADMIN;
-    if (targetIsAdmin && !this.isSuperAdminUser(actor)) {
-      throw new ForbiddenException(
-        'Yönetici oturumlarını yalnızca süper admin sonlandırabilir.',
-      );
-    }
-
-    // SUMOB session'ı mobil DB'de tutuluyor; burada yalnızca yerel cache temizliyoruz.
-    // Bir sonraki istekte sp_find_user yeniden çağrılır, SUMOB tarafı oturumu kapattıysa 401 döner.
-    this.sumobAuth.invalidateByUserId(userId);
-  }
-
-  async updateUserRole(targetUserId: string, newRole: UserRole, actorUserId: string): Promise<any> {
-    const [actor, target] = await Promise.all([
-      this.userRepository.findOne({ where: { id: actorUserId } }),
-      this.userRepository.findOne({ where: { id: targetUserId } }),
-    ]);
-
-    if (!actor) throw new NotFoundException('İşlemi yapan yönetici bulunamadı.');
-    if (!target) throw new NotFoundException('Kullanıcı bulunamadı.');
-
-    if (targetUserId === actorUserId) {
-      throw new BadRequestException('Kendi rolünüzü değiştiremezsiniz.');
-    }
-
-    const touchesAdminPermission =
-      target.role === UserRole.ADMIN || newRole === UserRole.ADMIN;
-
-    if (touchesAdminPermission && !this.isSuperAdminUser(actor)) {
-      throw new ForbiddenException(
-        'Admin yetkilerini yalnızca süper admin değiştirebilir.',
-      );
-    }
-
-    if (this.isSuperAdminUser(target)) {
-      throw new ForbiddenException(
-        'Süper admin rol/yetki değişikliği yapılamaz.',
-      );
-    }
-
-    if (target.role === UserRole.ADMIN && newRole !== UserRole.ADMIN) {
-      const adminCount = await this.userRepository.count({ where: { role: UserRole.ADMIN } });
-      if (adminCount <= 1) {
-        throw new BadRequestException('Sistemde en az bir yönetici kalmalıdır.');
-      }
-    }
-
-    if (target.role === newRole) {
-      throw new BadRequestException('Kullanıcı zaten bu role sahip.');
-    }
-
-    target.role = newRole;
-    if (newRole !== UserRole.ADMIN) {
-      target.isSuperAdmin = false;
-    }
-    await this.userRepository.save(target);
-    this.sumobAuth.invalidateByUserId(targetUserId);
-
-    const hasActiveSession = false;
-    return {
-      id: target.id,
-      studentNumber: target.studentNumber,
-      fullName: target.fullName,
-      role: target.role,
-      isSuperAdmin: this.isSuperAdminUser(target),
-      isActive: target.isActive,
-      hasActiveSession,
-      createdAt: target.createdAt,
-    };
-  }
 
   // ── Reservations ───────────────────────────────────────────
 
@@ -215,11 +65,22 @@ export class AdminService {
     hasMore: boolean;
   }> {
     const statusFilter = query?.status?.trim().toLowerCase();
-    const studentNumberQuery = (query?.studentQuery ?? query?.searchStudentNumber ?? '').trim();
-    const fullNameQuery = (query?.nameQuery ?? query?.searchFullName ?? '').trim();
+    const studentNumberQuery = (
+      query?.studentQuery ??
+      query?.searchStudentNumber ??
+      ''
+    ).trim();
+    const fullNameQuery = (
+      query?.nameQuery ??
+      query?.searchFullName ??
+      ''
+    ).trim();
     const dateFilter = (query?.dateYmd ?? query?.date ?? '').trim();
     const page = Math.max(1, Number.parseInt(query?.page ?? '1', 10) || 1);
-    const limit = Math.min(100, Math.max(1, Number.parseInt(query?.limit ?? '20', 10) || 20));
+    const limit = Math.min(
+      100,
+      Math.max(1, Number.parseInt(query?.limit ?? '20', 10) || 20),
+    );
 
     const qb = this.reservationRepository
       .createQueryBuilder('r')
@@ -237,7 +98,9 @@ export class AdminService {
       };
       const statuses =
         mapped[statusFilter] ||
-        (Object.values(ReservationStatus).includes(statusFilter as ReservationStatus)
+        (Object.values(ReservationStatus).includes(
+          statusFilter as ReservationStatus,
+        )
           ? [statusFilter as ReservationStatus]
           : undefined);
       if (statuses) {
@@ -251,11 +114,9 @@ export class AdminService {
       });
     }
 
-    if (fullNameQuery) {
-      qb.andWhere('user.full_name ILIKE :fullNameQuery', {
-        fullNameQuery: `%${fullNameQuery}%`,
-      });
-    }
+    // Ad soyad araması SUMOB tarafındadır; library DB profil verisi tutmuyor.
+    // fullNameQuery parametresi geriye dönük uyumluluk için kabul edilir, no-op.
+    void fullNameQuery;
 
     if (dateFilter) {
       qb.andWhere("to_char(r.reservation_date, 'YYYY-MM-DD') = :dateFilter", {
@@ -360,7 +221,8 @@ export class AdminService {
       const totalTables = totalByHall.get(hall.id) ?? 0;
       const occupiedTables = occupiedByHall.get(hall.id) ?? 0;
       const availableTables = Math.max(0, totalTables - occupiedTables);
-      const occupancyRate = totalTables > 0 ? (occupiedTables / totalTables) * 100 : 0;
+      const occupancyRate =
+        totalTables > 0 ? (occupiedTables / totalTables) * 100 : 0;
       return {
         ...hall,
         totalTables,
@@ -401,7 +263,9 @@ export class AdminService {
     if (dto.height !== undefined) table.height = dto.height;
 
     if (dto.featureIds) {
-      const features = await this.featureRepository.findBy({ id: In(dto.featureIds) });
+      const features = await this.featureRepository.findBy({
+        id: In(dto.featureIds),
+      });
       table.features = features;
     }
 
@@ -411,7 +275,6 @@ export class AdminService {
   // ── Statistics Overview ────────────────────────────────────
 
   async getOverview(): Promise<{
-    totalUsers: number;
     totalReservations: number;
     activeReservations: number;
     noShowCount: number;
@@ -420,22 +283,34 @@ export class AdminService {
   }> {
     const now = new Date();
 
-    const [totalUsers, totalReservations, activeReservations, noShowCount, cancelledReservations] =
-      await Promise.all([
-        this.userRepository.count(),
-        this.reservationRepository.count(),
-        this.reservationRepository.count({
-          where: { status: In([ReservationStatus.RESERVED, ReservationStatus.CHECKED_IN]) },
-        }),
-        this.reservationRepository.count({
-          where: { status: In([ReservationStatus.NO_SHOW, ReservationStatus.EXPIRED]) },
-        }),
-        this.reservationRepository.count({
-          where: { status: ReservationStatus.CANCELLED },
-        }),
-      ]);
+    const [
+      totalReservations,
+      activeReservations,
+      noShowCount,
+      cancelledReservations,
+    ] = await Promise.all([
+      this.reservationRepository.count(),
+      this.reservationRepository.count({
+        where: {
+          status: In([
+            ReservationStatus.RESERVED,
+            ReservationStatus.CHECKED_IN,
+          ]),
+        },
+      }),
+      this.reservationRepository.count({
+        where: {
+          status: In([ReservationStatus.NO_SHOW, ReservationStatus.EXPIRED]),
+        },
+      }),
+      this.reservationRepository.count({
+        where: { status: ReservationStatus.CANCELLED },
+      }),
+    ]);
 
-    const totalTables = await this.tableRepository.count({ where: { isActive: true } });
+    const totalTables = await this.tableRepository.count({
+      where: { isActive: true },
+    });
     const occupiedCount = await this.tableLockRepository
       .createQueryBuilder('l')
       .where('l.status = :s', { s: LockStatus.ACTIVE })
@@ -443,10 +318,10 @@ export class AdminService {
       .andWhere('l.lock_end > :now', { now })
       .getCount();
 
-    const occupancyRate = totalTables > 0 ? (occupiedCount / totalTables) * 100 : 0;
+    const occupancyRate =
+      totalTables > 0 ? (occupiedCount / totalTables) * 100 : 0;
 
     return {
-      totalUsers,
       totalReservations,
       activeReservations,
       noShowCount,
@@ -468,7 +343,9 @@ export class AdminService {
     });
   }
 
-  async createSpecialPeriod(dto: CreateSpecialPeriodDto): Promise<OperatingSchedule> {
+  async createSpecialPeriod(
+    dto: CreateSpecialPeriodDto,
+  ): Promise<OperatingSchedule> {
     this.validateDateRange(dto.startDate, dto.endDate);
     await this.ensureNoActivePeriodOverlap(dto.startDate, dto.endDate);
 
@@ -494,7 +371,10 @@ export class AdminService {
     return this.scheduleRepository.save(schedule);
   }
 
-  async updateSpecialPeriod(id: string, dto: UpdateSpecialPeriodDto): Promise<OperatingSchedule> {
+  async updateSpecialPeriod(
+    id: string,
+    dto: UpdateSpecialPeriodDto,
+  ): Promise<OperatingSchedule> {
     const schedule = await this.scheduleRepository.findOne({
       where: { id, periodKind: SchedulePeriodKind.SPECIAL },
     });
@@ -502,18 +382,26 @@ export class AdminService {
       throw new NotFoundException('Ozel donem bulunamadi.');
     }
 
-    const nextStartDate = dto.startDate ?? schedule.startDate.toISOString().slice(0, 10);
-    const nextEndDate = dto.endDate ?? schedule.endDate.toISOString().slice(0, 10);
+    const nextStartDate =
+      dto.startDate ?? schedule.startDate.toISOString().slice(0, 10);
+    const nextEndDate =
+      dto.endDate ?? schedule.endDate.toISOString().slice(0, 10);
     this.validateDateRange(nextStartDate, nextEndDate);
     await this.ensureNoActivePeriodOverlap(nextStartDate, nextEndDate, id);
 
     Object.assign(schedule, {
       ...(dto.name !== undefined ? { name: dto.name } : {}),
-      ...(dto.startDate !== undefined ? { startDate: new Date(dto.startDate) } : {}),
+      ...(dto.startDate !== undefined
+        ? { startDate: new Date(dto.startDate) }
+        : {}),
       ...(dto.endDate !== undefined ? { endDate: new Date(dto.endDate) } : {}),
       ...(dto.is24h !== undefined ? { is24h: dto.is24h } : {}),
-      ...(dto.openingTime !== undefined ? { openingTime: dto.openingTime } : {}),
-      ...(dto.closingTime !== undefined ? { closingTime: dto.closingTime } : {}),
+      ...(dto.openingTime !== undefined
+        ? { openingTime: dto.openingTime }
+        : {}),
+      ...(dto.closingTime !== undefined
+        ? { closingTime: dto.closingTime }
+        : {}),
       ...(dto.priority !== undefined ? { priority: dto.priority } : {}),
       ...(dto.rules !== undefined
         ? {
@@ -528,7 +416,10 @@ export class AdminService {
     return this.scheduleRepository.save(schedule);
   }
 
-  async toggleSpecialPeriod(id: string, dto: ToggleSpecialPeriodDto): Promise<OperatingSchedule> {
+  async toggleSpecialPeriod(
+    id: string,
+    dto: ToggleSpecialPeriodDto,
+  ): Promise<OperatingSchedule> {
     const schedule = await this.scheduleRepository.findOne({
       where: { id, periodKind: SchedulePeriodKind.SPECIAL },
     });
@@ -559,7 +450,9 @@ export class AdminService {
       throw new BadRequestException('Gecersiz tarih degeri.');
     }
     if (start > end) {
-      throw new BadRequestException('Baslangic tarihi bitis tarihinden buyuk olamaz.');
+      throw new BadRequestException(
+        'Baslangic tarihi bitis tarihinden buyuk olamaz.',
+      );
     }
   }
 

@@ -34,12 +34,16 @@ export class SumobAuthGuard implements CanActivate {
     }
 
     const resolved = await this.sumobAuth.resolve(deviceKey, userKey);
-    // RequestUser uyumlu (id, studentNumber, role) + ek alanlar.
+    // RequestUser uyumlu — profil alanları (fullName/email/faculty/department)
+    // doğrudan SUMOB sonucundan gelir, library DB'den okunmaz.
     (req as any).user = {
       id: resolved.id,
       studentNumber: resolved.studentNumber,
       role: resolved.role,
       fullName: resolved.fullName,
+      email: resolved.email,
+      facultyName: resolved.facultyName,
+      departmentName: resolved.departmentName,
       isSuperAdmin: resolved.isSuperAdmin,
       sumobUserKey: resolved.sumobUserKey,
       sumobUserId: resolved.sumobUserId,

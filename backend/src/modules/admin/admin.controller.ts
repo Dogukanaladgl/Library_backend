@@ -19,9 +19,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '../../database/entities';
 import { AdminService } from './admin.service';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { RequestUser } from '../auth/decorators/current-user.decorator';
-import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import {
   CreateSpecialPeriodDto,
   ToggleSpecialPeriodDto,
@@ -34,51 +31,9 @@ import {
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // ── Users (yalnızca admin) ───────────────────────────────────
-
-  @Get('users')
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiOperation({ summary: 'Tüm kullanıcılar (admin)' })
-  @ApiQuery({ name: 'role', required: false, enum: UserRole, description: 'Filtrelenecek rol' })
-  @ApiQuery({ name: 'search', required: false, description: 'Ad soyad veya öğrenci no araması' })
-  @ApiQuery({ name: 'page', required: false, type: Number, example: 1 })
-  @ApiQuery({ name: 'limit', required: false, type: Number, example: 20 })
-  async getUsers(
-    @Query('role') role?: string,
-    @Query('search') search?: string,
-    @Query('page') page?: string,
-    @Query('limit') limit?: string,
-  ) {
-    return this.adminService.getUsers({
-      role,
-      search,
-      page,
-      limit,
-    });
-  }
-
-  @Post('users/:id/force-logout')
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Kullanıcı oturumlarını zorla sonlandır' })
-  async forceLogout(
-    @Param('id', ParseUUIDPipe) id: string,
-    @CurrentUser() actor: RequestUser,
-  ) {
-    await this.adminService.forceLogout(id, actor.id);
-    return { message: 'Kullanıcı oturumları sonlandırıldı.' };
-  }
-
-  @Patch('users/:id/role')
-  @UseGuards(JwtAuthGuard, AdminGuard)
-  @ApiOperation({ summary: 'Kullanıcı rolünü güncelle (admin)' })
-  async updateUserRole(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateUserRoleDto,
-    @CurrentUser() actor: RequestUser,
-  ) {
-    return this.adminService.updateUserRole(id, dto.role, actor.id);
-  }
+  // ── Kullanıcı yönetimi YOK ───────────────────────────────────
+  // Kullanıcı bilgileri ve oturumu SUMOB mobil DB tarafından yönetilir.
+  // Library API yalnızca rezervasyon işlemlerini kapsar.
 
   // ── Reservations ───────────────────────────────────────────
 

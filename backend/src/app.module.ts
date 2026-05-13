@@ -17,9 +17,7 @@ import {
   ReservationLog,
   OperatingSchedule,
   Notification,
-  UserPreference,
   User,
-  UserSession,
 } from './database/entities';
 
 // Modules
@@ -29,7 +27,6 @@ import { ReservationsModule } from './modules/reservations/reservations.module';
 import { StatisticsModule } from './modules/statistics/statistics.module';
 import { SchedulesModule } from './modules/schedules/schedules.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { UsersModule } from './modules/users/users.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { DeskModule } from './modules/desk/desk.module';
 import { SumobAuthModule } from './modules/sumob-auth/sumob-auth.module';
@@ -58,9 +55,7 @@ import { SumobAuthModule } from './modules/sumob-auth/sumob-auth.module';
           ReservationLog,
           OperatingSchedule,
           Notification,
-          UserPreference,
           User,
-          UserSession,
         ];
         const base = {
           type: 'postgres' as const,
@@ -90,7 +85,6 @@ import { SumobAuthModule } from './modules/sumob-auth/sumob-auth.module';
     // Uygulama Modülleri
     SumobAuthModule,
     AuthModule,
-    UsersModule,
     HallsModule,
     TablesModule,
     ReservationsModule,

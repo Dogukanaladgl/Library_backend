@@ -10,9 +10,7 @@ import {
   ReservationLog,
   OperatingSchedule,
   Notification,
-  UserPreference,
   User,
-  UserSession,
 } from './entities';
 
 const url = process.env.DATABASE_URL;
@@ -37,9 +35,7 @@ const AppDataSource = new DataSource({
     ReservationLog,
     OperatingSchedule,
     Notification,
-    UserPreference,
     User,
-    UserSession,
   ],
   migrations: [__dirname + '/migrations/*.{ts,js}'],
   migrationsTableName: 'typeorm_migrations',

@@ -6,11 +6,26 @@ import { User, UserRole } from '../../database/entities';
 import { MobilDbService, MobilUserRow } from './mobil-db.service';
 
 export interface ResolvedSumobUser {
-  /** Library `users` tablosundaki uuid. */
+  /**
+   * Library `users` tablosundaki uuid. Sadece rezervasyon/log FK'leri için
+   * lazy provision edilir; ilk rezervasyon yapılana kadar boş string olabilir.
+   * Profil verisi (ad, kurumNo, e-posta, vs.) library'de saklanmaz; her
+   * istekte SUMOB `sp_find_user` çıktısından doldurulur.
+   */
   id: string;
+  /** SUMOB `kurumNo` (öğrenci/personel numarası). */
   studentNumber: string;
+  /** SUMOB `adi soyadi` (her istekte SUMOB'tan tazelenir). */
   fullName: string;
+  /** SUMOB e-posta (varsa). */
+  email: string | null;
+  /** SUMOB fakülte adı (varsa). */
+  facultyName: string | null;
+  /** SUMOB bölüm adı (varsa). */
+  departmentName: string | null;
+  /** Library tarafında atanmış rol (student/admin/staff). SUMOB'da yoktur. */
   role: UserRole;
+  /** Library tarafında işaretlenmiş super admin bayrağı. */
   isSuperAdmin: boolean;
   /** SUMOB mobil DB userKey (cache anahtarı / audit). */
   sumobUserKey: string;
@@ -78,15 +93,39 @@ export class SumobAuthService {
       );
     }
 
-    const fullName = buildFullName(row);
-    const libUser = await this.upsertLibraryUser(studentNumber, fullName);
+    const fullName = buildFullName(row) || studentNumber;
+
+    // Read-only: var olan library satırını oku; yoksa varsayılan rol student.
+    // Hiçbir koşulda burada yazma yapmıyoruz — provisioning sadece rezervasyon
+    // yaratılırken (write path) gerçekleşir.
+    const libUser = await this.userRepository.findOne({
+      where: { studentNumber },
+    });
+    if (libUser && libUser.isActive === false) {
+      throw new UnauthorizedException(
+        'Kullanıcı kütüphane sisteminde devre dışı bırakılmış.',
+      );
+    }
 
     const resolved: ResolvedSumobUser = {
-      id: libUser.id,
-      studentNumber: libUser.studentNumber,
-      fullName: libUser.fullName,
-      role: libUser.role,
-      isSuperAdmin: !!libUser.isSuperAdmin,
+      id: libUser?.id ?? '',
+      studentNumber,
+      fullName,
+      email: pickString(row, ['ePosta', 'eposta', 'email']),
+      facultyName: pickString(row, [
+        'fakulteAdi',
+        'fakulte',
+        'fakulteAd',
+        'birimAdi',
+      ]),
+      departmentName: pickString(row, [
+        'bolumAdi',
+        'bolum',
+        'bolumAd',
+        'programAdi',
+      ]),
+      role: libUser?.role ?? UserRole.STUDENT,
+      isSuperAdmin: !!libUser?.isSuperAdmin,
       sumobUserKey: userKey,
       sumobUserId: row.id,
     };
@@ -115,41 +154,35 @@ export class SumobAuthService {
     }
   }
 
-  private async upsertLibraryUser(
-    studentNumber: string,
-    fullName: string,
-  ): Promise<User> {
+  /**
+   * Rezervasyon FK'si için library satırını lazy provision eder. Sadece write
+   * path'lerden (rezervasyon yaratma) çağrılır; read path'lerinde çağırma.
+   * Profil verisi YAZILMAZ — sadece studentNumber + varsayılan rol kaydedilir.
+   */
+  async ensureLibraryUserId(studentNumber: string): Promise<string> {
     const existing = await this.userRepository.findOne({
       where: { studentNumber },
     });
     if (existing) {
-      // Aktif değilse 401 verelim ki admin manuel tekrar açabilsin.
-      if (!existing.isActive) {
+      if (existing.isActive === false) {
         throw new UnauthorizedException(
           'Kullanıcı kütüphane sisteminde devre dışı bırakılmış.',
         );
       }
-      // İsim güncel değilse senkronize et (sessizce).
-      if (fullName && existing.fullName !== fullName) {
-        existing.fullName = fullName;
-        try {
-          await this.userRepository.save(existing);
-        } catch (err) {
-          this.logger.warn(`User fullName güncellenemedi: ${err}`);
-        }
-      }
-      return existing;
+      return existing.id;
     }
-
     const created = this.userRepository.create({
       studentNumber,
-      fullName: fullName || studentNumber,
+      // fullName SUMOB'tan geldiği için library'de saklanmaz; geriye dönük
+      // şema uyumluluğu için studentNumber yazılır.
+      fullName: studentNumber,
       role: UserRole.STUDENT,
       isActive: true,
       isSuperAdmin: false,
-      passwordHash: '',
+      passwordHash: null,
     });
-    return this.userRepository.save(created);
+    const saved = await this.userRepository.save(created);
+    return saved.id;
   }
 }
 
@@ -157,4 +190,15 @@ function buildFullName(row: MobilUserRow): string {
   const first = (row.adi ?? '').toString().trim();
   const last = (row.soyadi ?? '').toString().trim();
   return [first, last].filter(Boolean).join(' ').trim();
+}
+
+function pickString(
+  row: Record<string, unknown>,
+  keys: string[],
+): string | null {
+  for (const k of keys) {
+    const v = row[k];
+    if (typeof v === 'string' && v.trim()) return v.trim();
+  }
+  return null;
 }

@@ -4,7 +4,6 @@ import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import {
-  User,
   Reservation,
   Hall,
   Table,
@@ -16,7 +15,6 @@ import {
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      User,
       Reservation,
       Hall,
       Table,

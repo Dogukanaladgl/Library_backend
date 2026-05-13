@@ -19,6 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { ReservationsService } from './reservations.service';
 import { CheckInService } from './check-in.service';
+import { SumobAuthService } from '../sumob-auth/sumob-auth.service';
 import {
   CreateReservationDto,
   CancelReservationDto,
@@ -40,6 +41,7 @@ export class ReservationsController {
   constructor(
     private readonly reservationsService: ReservationsService,
     private readonly checkInService: CheckInService,
+    private readonly sumobAuth: SumobAuthService,
   ) {}
 
   @Post()
@@ -51,7 +53,11 @@ export class ReservationsController {
     @CurrentUser() user: RequestUser,
     @Body() createDto: CreateReservationDto,
   ) {
-    return this.reservationsService.create(user.id, createDto);
+    // Rezervasyon FK için library satırı lazy provision edilir; library DB'de
+    // user yönetimi yapılmaz, SADECE rezervasyona referans için satır vardır.
+    const userId =
+      user.id || (await this.sumobAuth.ensureLibraryUserId(user.studentNumber));
+    return this.reservationsService.create(userId, createDto);
   }
 
   @Get('my')

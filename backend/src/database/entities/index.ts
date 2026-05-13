@@ -11,7 +11,5 @@ export {
   type ScheduleRules,
 } from './operating-schedule.entity';
 export { Notification, NotificationType } from './notification.entity';
-export { UserPreference } from './user-preference.entity';
 export { User, UserRole } from './user.entity';
-export { UserSession } from './user-session.entity';
 
