@@ -61,7 +61,7 @@
 #      - redis
 
 services:
-  backend:
+  kutuphane-api:
     build:
       context: ./backend
       dockerfile: Dockerfile
@@ -87,6 +87,14 @@ services:
     #   redis:
     #     condition: service_healthy
     command: ["node", "dist/main.js"]
+    networks:
+      - default
+      - university-shared
+
+networks:
+  university-shared:
+    name: university_university-network
+    external: true
 
 # volumes:
 #   postgres_data:
