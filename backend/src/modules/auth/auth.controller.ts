@@ -42,6 +42,7 @@ export class AuthController {
       facultyName: user.facultyName ?? null,
       departmentName: user.departmentName ?? null,
       isSuperAdmin: !!user.isSuperAdmin,
+      isStaffMember: !!user.isStaffMember,
     };
   }
 }

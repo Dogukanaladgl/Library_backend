@@ -49,6 +49,14 @@ export class User {
   @Column({ name: 'is_super_admin', default: false })
   isSuperAdmin: boolean;
 
+  /**
+   * Yarı zamanlı salon görevlisi (öğrenci ama aynı zamanda staff yetkisi).
+   * Role `STUDENT` kalır → öğrenci ekranı çalışır; bayrak true ise staff
+   * paneline de erişim verilir. Admin tarafından toggle edilir.
+   */
+  @Column({ name: 'is_staff_member', default: false })
+  isStaffMember: boolean;
+
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 

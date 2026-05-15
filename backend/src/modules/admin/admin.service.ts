@@ -16,12 +16,14 @@ import {
   OperatingSchedule,
   ScheduleType,
   SchedulePeriodKind,
+  User,
 } from '../../database/entities';
 import {
   CreateSpecialPeriodDto,
   ToggleSpecialPeriodDto,
   UpdateSpecialPeriodDto,
 } from './dto/manage-special-period.dto';
+import { SumobAuthService } from '../sumob-auth/sumob-auth.service';
 
 /**
  * Library admin servisleri yalnızca rezervasyon/salon/masa/özel dönem
@@ -43,7 +45,68 @@ export class AdminService {
     private readonly tableLockRepository: Repository<TableLock>,
     @InjectRepository(OperatingSchedule)
     private readonly scheduleRepository: Repository<OperatingSchedule>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+    private readonly sumobAuth: SumobAuthService,
   ) {}
+
+  // ── Staff Members (yarı zamanlı salon görevlileri) ────────
+  // Library DB'de role STUDENT kalır; `isStaffMember=true` ile staff paneli
+  // erişimi açılır. SUMOB tarafı bağımsız: bu sadece library yetki kaydı.
+
+  async listStaffMembers(): Promise<
+    Array<{ studentNumber: string; createdAt: Date }>
+  > {
+    const rows = await this.userRepository.find({
+      where: { isStaffMember: true },
+      select: ['studentNumber', 'createdAt'],
+      order: { createdAt: 'DESC' },
+    });
+    return rows.map((u) => ({
+      studentNumber: u.studentNumber,
+      createdAt: u.createdAt,
+    }));
+  }
+
+  async addStaffMember(
+    studentNumber: string,
+  ): Promise<{ studentNumber: string }> {
+    const trimmed = (studentNumber ?? '').trim();
+    if (!trimmed) {
+      throw new BadRequestException('Kurum numarası boş olamaz.');
+    }
+    // Library row yoksa lazy yarat (rezervasyon dışı tek provisioning yolu).
+    await this.sumobAuth.ensureLibraryUserId(trimmed);
+    const row = await this.userRepository.findOne({
+      where: { studentNumber: trimmed },
+    });
+    if (!row) {
+      throw new NotFoundException('Kullanıcı satırı oluşturulamadı.');
+    }
+    if (!row.isStaffMember) {
+      row.isStaffMember = true;
+      await this.userRepository.save(row);
+    }
+    this.sumobAuth.invalidateByUserId(row.id);
+    return { studentNumber: row.studentNumber };
+  }
+
+  async removeStaffMember(studentNumber: string): Promise<void> {
+    const trimmed = (studentNumber ?? '').trim();
+    if (!trimmed) {
+      throw new BadRequestException('Kurum numarası boş olamaz.');
+    }
+    const row = await this.userRepository.findOne({
+      where: { studentNumber: trimmed },
+    });
+    if (!row || !row.isStaffMember) {
+      // Idempotent: yoksa veya zaten staff değilse 404 vermeye gerek yok.
+      return;
+    }
+    row.isStaffMember = false;
+    await this.userRepository.save(row);
+    this.sumobAuth.invalidateByUserId(row.id);
+  }
 
   // ── Reservations ───────────────────────────────────────────
 

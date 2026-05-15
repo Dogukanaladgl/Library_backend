@@ -22,6 +22,8 @@ export interface RequestUser {
   departmentName?: string | null;
   /** Library super-admin bayrağı. */
   isSuperAdmin?: boolean;
+  /** Yarı zamanlı salon görevlisi (student rolü + staff paneli). */
+  isStaffMember?: boolean;
   /** SUMOB userKey (audit/cache). */
   sumobUserKey?: string;
   /** SUMOB Users.id. */

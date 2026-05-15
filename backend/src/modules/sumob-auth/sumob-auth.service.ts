@@ -27,6 +27,8 @@ export interface ResolvedSumobUser {
   role: UserRole;
   /** Library tarafında işaretlenmiş super admin bayrağı. */
   isSuperAdmin: boolean;
+  /** Yarı zamanlı salon görevlisi bayrağı (student rolü + staff paneli). */
+  isStaffMember: boolean;
   /** SUMOB mobil DB userKey (cache anahtarı / audit). */
   sumobUserKey: string;
   /** SUMOB mobil DB Users.id (int). */
@@ -126,6 +128,7 @@ export class SumobAuthService {
       ]),
       role: libUser?.role ?? UserRole.STUDENT,
       isSuperAdmin: !!libUser?.isSuperAdmin,
+      isStaffMember: !!libUser?.isStaffMember,
       sumobUserKey: userKey,
       sumobUserId: row.id,
     };

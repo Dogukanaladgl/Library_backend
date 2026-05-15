@@ -31,9 +31,37 @@ import {
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  // ── Kullanıcı yönetimi YOK ───────────────────────────────────
-  // Kullanıcı bilgileri ve oturumu SUMOB mobil DB tarafından yönetilir.
-  // Library API yalnızca rezervasyon işlemlerini kapsar.
+  // ── Staff Members (yarı zamanlı salon görevlileri) ─────────
+  // Kullanıcı profil/oturum yönetimi SUMOB tarafındadır; burada yalnızca
+  // hangi kurumNo'ların staff paneline erişebileceği kayıt edilir.
+
+  @Get('staff-members')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiOperation({ summary: 'Salon görevlisi olarak işaretli kullanıcılar' })
+  async listStaffMembers() {
+    return this.adminService.listStaffMembers();
+  }
+
+  @Post('staff-members')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Bir kurumNo için salon görevlisi (staff) yetkisi ver',
+  })
+  async addStaffMember(@Body() body: { studentNumber: string }) {
+    return this.adminService.addStaffMember(body?.studentNumber);
+  }
+
+  @Delete('staff-members/:studentNumber')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'KurumNo için salon görevlisi yetkisini kaldır',
+  })
+  async removeStaffMember(@Param('studentNumber') studentNumber: string) {
+    await this.adminService.removeStaffMember(studentNumber);
+    return { message: 'Görevli yetkisi kaldırıldı.' };
+  }
 
   // ── Reservations ───────────────────────────────────────────
 

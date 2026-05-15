@@ -18,6 +18,16 @@ export class RolesGuard implements CanActivate {
     }
 
     const { user } = context.switchToHttp().getRequest();
-    return requiredRoles.includes(user.role);
+    if (requiredRoles.includes(user.role)) return true;
+
+    // Yarı zamanlı salon görevlileri: `student` rolündeler ama `isStaffMember`
+    // bayrağı ile staff panel endpoint'lerine erişebilirler.
+    if (
+      requiredRoles.includes(UserRole.STAFF) &&
+      user?.isStaffMember === true
+    ) {
+      return true;
+    }
+    return false;
   }
 }

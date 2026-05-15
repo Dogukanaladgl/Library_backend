@@ -45,6 +45,7 @@ export class SumobAuthGuard implements CanActivate {
       facultyName: resolved.facultyName,
       departmentName: resolved.departmentName,
       isSuperAdmin: resolved.isSuperAdmin,
+      isStaffMember: resolved.isStaffMember,
       sumobUserKey: resolved.sumobUserKey,
       sumobUserId: resolved.sumobUserId,
     };

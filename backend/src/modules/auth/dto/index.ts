@@ -49,6 +49,14 @@ export class UserProfileDto {
 
   @ApiProperty({ required: false, example: false })
   isSuperAdmin?: boolean;
+
+  @ApiProperty({
+    required: false,
+    example: false,
+    description:
+      'Yarı zamanlı salon görevlisi bayrağı; true ise öğrenci ekranı + staff paneli erişimi olur.',
+  })
+  isStaffMember?: boolean;
 }
 
 export class LoginResponseDto {

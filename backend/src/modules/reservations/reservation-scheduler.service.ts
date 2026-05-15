@@ -140,38 +140,59 @@ export class ReservationSchedulerService {
   }
 
   /**
-   * Sure biten CHECKED_IN rezervasyonlari tamamla
+   * Süresi biten CHECKED_IN rezervasyonları sunucu tarafında otomatik kapatır.
+   *
+   * Mantık: kullanıcı `endTime` sonrası uzatma veya tamamla yapmadıysa oturum
+   * sunucuda iptal edilir; gerekçe mobil ile uyumlu (`session_timeout_no_extend`)
+   * şekilde kayda geçer ve masa kilidi anında serbest bırakılarak müsaitlik
+   * gecikmesi engellenir. Uzatma ile `endTime` ileri taşındıysa yeni değer
+   * esas alındığı için bu sorgu kaydı atlar.
    */
   private async handleCompletions(): Promise<void> {
     const now = new Date();
+    const reason = 'session_timeout_no_extend';
 
-    const completedReservations = await this.reservationRepository.find({
+    const expired = await this.reservationRepository.find({
       where: {
         status: ReservationStatus.CHECKED_IN,
         endTime: LessThanOrEqual(now),
       },
     });
 
-    for (const reservation of completedReservations) {
+    for (const reservation of expired) {
+      // Atomik: durum hâlâ CHECKED_IN ise CANCELLED'a çevir (uzatma/tamamla ile
+      // yarışı koruyalım — başka bir akış araya girdiyse atla).
       const result = await this.reservationRepository.update(
         { id: reservation.id, status: ReservationStatus.CHECKED_IN },
-        { status: ReservationStatus.COMPLETED, completedAt: now },
+        {
+          status: ReservationStatus.CANCELLED,
+          cancelledAt: now,
+          cancelledReason: reason,
+        },
       );
 
       if (result.affected && result.affected > 0) {
+        // Masa kilidini anında serbest bırak — başka kullanıcılar için müsaitlik
+        // gecikmesin.
         await this.tableLockRepository.update(
           { reservationId: reservation.id, status: LockStatus.ACTIVE },
           { status: LockStatus.RELEASED, releasedAt: now },
         );
 
         await this.eventService.log(
-          ReservationLogEvent.COMPLETED,
+          ReservationLogEvent.CANCELLED,
           reservation.id,
           reservation.userId,
-          { completedAt: now.toISOString() },
+          {
+            reason,
+            cancelledAt: now.toISOString(),
+            source: 'server_scheduler',
+          },
         );
 
-        this.logger.log(`Rezervasyon tamamlandi: ${reservation.id}`);
+        this.logger.log(
+          `Oturum süresi doldu, sunucu iptal etti: ${reservation.id} (${reason})`,
+        );
       }
     }
   }
