@@ -51,7 +51,7 @@ async function bootstrap() {
         - 📊 Doluluk istatistikleri
         `,
       )
-      .setVersion('1.0')
+      .setVersion('1.1.0-session-autoclose')
       .addBearerAuth()
       .addTag('auth', 'Kimlik doğrulama işlemleri')
       .addTag('halls', 'Salon işlemleri')
