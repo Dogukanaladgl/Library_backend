@@ -182,7 +182,8 @@ export class SumobAuthService {
       role: UserRole.STUDENT,
       isActive: true,
       isSuperAdmin: false,
-      passwordHash: null,
+      /** Postgres'te kolon NOT NULL olabilir; SUMOB oturumunda parola kullanılmaz. */
+      passwordHash: '',
     });
     const saved = await this.userRepository.save(created);
     return saved.id;
