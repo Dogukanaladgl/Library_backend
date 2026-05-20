@@ -50,9 +50,8 @@ export class User {
   isSuperAdmin: boolean;
 
   /**
-   * Yarı zamanlı salon görevlisi (öğrenci ama aynı zamanda staff yetkisi).
-   * Role `STUDENT` kalır → öğrenci ekranı çalışır; bayrak true ise staff
-   * paneline de erişim verilir. Admin tarafından toggle edilir.
+   * Yarı zamanlı salon görevlisi kaydı (`is_staff_member`); görev atanırken
+   * rolleri `staff` yapılır (giriş yönlendirmesi için). Admin hesapları hariç.
    */
   @Column({ name: 'is_staff_member', default: false })
   isStaffMember: boolean;

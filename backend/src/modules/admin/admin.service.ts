@@ -17,6 +17,7 @@ import {
   ScheduleType,
   SchedulePeriodKind,
   User,
+  UserRole,
 } from '../../database/entities';
 import {
   CreateSpecialPeriodDto,
@@ -50,9 +51,9 @@ export class AdminService {
     private readonly sumobAuth: SumobAuthService,
   ) {}
 
-  // ── Staff Members (yarı zamanlı salon görevlileri) ────────
-  // Library DB'de role STUDENT kalır; `isStaffMember=true` ile staff paneli
-  // erişimi açılır. SUMOB tarafı bağımsız: bu sadece library yetki kaydı.
+  // ── Staff Members (salon görevlileri) ────────
+  // Görev verildiğinde `role = staff` olarak güncellenir; böylece oturumdaki kullanıcı
+  // doğrudan staff paneline yönlendirilebilir. `is_staff_member` liste / silme işlevi için tutulur.
 
   async listStaffMembers(): Promise<
     Array<{ studentNumber: string; createdAt: Date }>
@@ -85,8 +86,12 @@ export class AdminService {
     }
     if (!row.isStaffMember) {
       row.isStaffMember = true;
-      await this.userRepository.save(row);
     }
+    // Oturum / müşteri: `staff` rolü olmadan yalnızca bayrak yeterli olmuyordu.
+    if (row.role !== UserRole.ADMIN) {
+      row.role = UserRole.STAFF;
+    }
+    await this.userRepository.save(row);
     this.sumobAuth.invalidateByUserId(row.id);
     return { studentNumber: row.studentNumber };
   }
@@ -104,6 +109,10 @@ export class AdminService {
       return;
     }
     row.isStaffMember = false;
+    // Bu liste yalnızca salon görevlileri içindir; görev kalkınca öğrenciye dön.
+    if (row.role === UserRole.STAFF) {
+      row.role = UserRole.STUDENT;
+    }
     await this.userRepository.save(row);
     this.sumobAuth.invalidateByUserId(row.id);
   }
