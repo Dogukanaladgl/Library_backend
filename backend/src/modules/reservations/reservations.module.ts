@@ -14,6 +14,7 @@ import {
 } from '../../database/entities';
 import { HallsModule } from '../halls/halls.module';
 import { SchedulesModule } from '../schedules/schedules.module';
+import { HallAvailabilityModule } from '../hall-availability/hall-availability.module';
 import { SumobAuthModule } from '../sumob-auth/sumob-auth.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { SumobAuthModule } from '../sumob-auth/sumob-auth.module';
     ]),
     HallsModule,
     SchedulesModule,
+    HallAvailabilityModule,
     SumobAuthModule,
   ],
   controllers: [ReservationsController],

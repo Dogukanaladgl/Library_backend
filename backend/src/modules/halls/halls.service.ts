@@ -12,6 +12,7 @@ import {
 } from '../../database/entities';
 import { CreateHallDto, UpdateHallDto } from './dto';
 import { SchedulesService } from '../schedules/schedules.service';
+import { HallAvailabilityService } from '../hall-availability/hall-availability.service';
 
 /** Postgres date / TypeORM eşlemesinde güvenli gün anahtarı (YYYY-MM-DD) */
 function ymdFromJsDate(d: Date): string {
@@ -43,6 +44,7 @@ export class HallsService {
     @InjectRepository(Reservation)
     private readonly reservationRepository: Repository<Reservation>,
     private readonly schedulesService: SchedulesService,
+    private readonly hallAvailabilityService: HallAvailabilityService,
   ) {}
 
   async findAll(): Promise<Hall[]> {
@@ -222,6 +224,11 @@ export class HallsService {
       maxAdvanceDays: number;
       scheduleName: string;
     };
+    hallStatus?: {
+      isClosed: boolean;
+      reason?: string | null;
+      note?: string | null;
+    };
     tables: Array<{
       tableId: string;
       tableNumber: string;
@@ -260,10 +267,13 @@ export class HallsService {
     const openH = hours.is24h ? 0 : Number(hours.openingTime.split(':')[0]);
     const closeH = hours.is24h ? 24 : Number(hours.closingTime.split(':')[0]);
 
-    const [activeReservations, activeLocks] = await Promise.all([
-      this.reservationsForHallCalendarDay(hallId, ymd),
-      this.locksForHallCalendarDay(hallId, ymd),
-    ]);
+    const [activeReservations, activeLocks, closureStatus, dayExceptions] =
+      await Promise.all([
+        this.reservationsForHallCalendarDay(hallId, ymd),
+        this.locksForHallCalendarDay(hallId, ymd),
+        this.hallAvailabilityService.getClosureStatusForHallDate(hallId, ymd),
+        this.hallAvailabilityService.getExceptionsForHallDate(hallId, ymd),
+      ]);
 
     const tables = hall.tables.map((table) => {
       const tableReservations = activeReservations.filter((r) => r.tableId === table.id);
@@ -298,7 +308,19 @@ export class HallsService {
           (l) => l.lockStart < slotEnd && l.lockEnd > slotStart,
         );
 
-        const isAvailable = !conflictingReservation && !conflictingLock && !isPastSlotWindowClosed;
+        const blockedByHallRules =
+          closureStatus.isClosed ||
+          this.hallAvailabilityService.isSlotBlockedByExceptions(
+            slotStart,
+            slotEnd,
+            dayExceptions,
+          );
+
+        const isAvailable =
+          !blockedByHallRules &&
+          !conflictingReservation &&
+          !conflictingLock &&
+          !isPastSlotWindowClosed;
 
         const slot: {
           startTime: string;
@@ -353,6 +375,13 @@ export class HallsService {
         maxAdvanceDays,
         scheduleName: reservationPolicy.scheduleName,
       },
+      hallStatus: closureStatus.isClosed
+        ? {
+            isClosed: true,
+            reason: closureStatus.reason ?? null,
+            note: closureStatus.note ?? null,
+          }
+        : { isClosed: false },
       tables,
     };
   }

@@ -83,7 +83,9 @@ export class TablesService {
       features,
     });
 
-    return this.tableRepository.save(table);
+    const saved = await this.tableRepository.save(table);
+    await this.syncHallCapacity(createTableDto.hallId);
+    return saved;
   }
 
   async createBulk(
@@ -120,6 +122,7 @@ export class TablesService {
       createdTables.push(await this.tableRepository.save(table));
     }
 
+    await this.syncHallCapacity(hallId);
     return createdTables;
   }
 
@@ -142,6 +145,7 @@ export class TablesService {
     const table = await this.findOne(id);
     table.isActive = false;
     await this.tableRepository.save(table);
+    await this.syncHallCapacity(table.hallId);
   }
 
   async regenerateQrCode(id: string): Promise<Table> {
@@ -180,6 +184,14 @@ export class TablesService {
   private generateQrCode(hallId: string, tableNumber: string): string {
     const uniqueId = uuidv4().slice(0, 8);
     return `SELCUK_LIB_${hallId.slice(0, 8)}_${tableNumber}_${uniqueId}`;
+  }
+
+  /** Aktif masa sayısını salon kapasitesi alanıyla eşitler (rezervasyon motorunu etkilemez). */
+  async syncHallCapacity(hallId: string): Promise<void> {
+    const activeTableCount = await this.tableRepository.count({
+      where: { hallId, isActive: true },
+    });
+    await this.hallRepository.update(hallId, { capacity: activeTableCount });
   }
 }
 

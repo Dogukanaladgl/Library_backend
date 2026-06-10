@@ -28,6 +28,7 @@ import {
   SchedulePeriodKind,
 } from '../../database/entities';
 import { SchedulesService } from '../schedules/schedules.service';
+import { HallAvailabilityService } from '../hall-availability/hall-availability.service';
 import { ReservationEventService } from './reservation-event.service';
 import { CreateReservationDto } from './dto';
 
@@ -57,6 +58,7 @@ export class ReservationsService {
     private readonly hallRepository: Repository<Hall>,
     private readonly dataSource: DataSource,
     private readonly schedulesService: SchedulesService,
+    private readonly hallAvailabilityService: HallAvailabilityService,
     private readonly eventService: ReservationEventService,
     private readonly configService: ConfigService,
   ) {}
@@ -82,6 +84,15 @@ export class ReservationsService {
     if (!table) {
       throw new NotFoundException('Masa bulunamadi veya aktif degil.');
     }
+
+    const endTimeForValidation = new Date(
+      startTime.getTime() + INITIAL_DURATION_HOURS * 60 * 60 * 1000,
+    );
+    await this.hallAvailabilityService.validateReservationAllowed(
+      table.hallId,
+      startTime,
+      endTimeForValidation,
+    );
 
     // 4. Kullanicinin aktif rezervasyonu var mi?
     const activeReservation = await this.findActiveReservation(userId);

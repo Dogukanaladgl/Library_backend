@@ -12,4 +12,9 @@ export {
 } from './operating-schedule.entity';
 export { Notification, NotificationType } from './notification.entity';
 export { User, UserRole } from './user.entity';
+export {
+  HallAvailabilityException,
+  AvailabilityExceptionType,
+} from './hall-availability-exception.entity';
+export { HallClosure, HallClosureReason } from './hall-closure.entity';
 

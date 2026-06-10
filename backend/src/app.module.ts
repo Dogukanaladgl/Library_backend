@@ -18,6 +18,8 @@ import {
   OperatingSchedule,
   Notification,
   User,
+  HallAvailabilityException,
+  HallClosure,
 } from './database/entities';
 
 // Modules
@@ -56,6 +58,8 @@ import { SumobAuthModule } from './modules/sumob-auth/sumob-auth.module';
           OperatingSchedule,
           Notification,
           User,
+          HallAvailabilityException,
+          HallClosure,
         ];
         const base = {
           type: 'postgres' as const,

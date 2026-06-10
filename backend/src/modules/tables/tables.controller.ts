@@ -88,4 +88,3 @@ export class TablesController {
     return this.tablesService.remove(id);
   }
 }
-

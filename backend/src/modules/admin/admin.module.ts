@@ -3,6 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AdminController } from './admin.controller';
 import { AdminService } from './admin.service';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { HallAvailabilityModule } from '../hall-availability/hall-availability.module';
 import {
   Reservation,
   Hall,
@@ -15,6 +16,7 @@ import {
 
 @Module({
   imports: [
+    HallAvailabilityModule,
     TypeOrmModule.forFeature([
       Reservation,
       Hall,

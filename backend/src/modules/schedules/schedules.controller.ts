@@ -9,7 +9,7 @@ import {
   Query,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto, UpdateScheduleDto } from './dto';
 
@@ -71,4 +71,3 @@ export class SchedulesController {
     return this.schedulesService.remove(id);
   }
 }
-
