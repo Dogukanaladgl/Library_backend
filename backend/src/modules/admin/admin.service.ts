@@ -25,6 +25,9 @@ import {
   UpdateSpecialPeriodDto,
 } from './dto/manage-special-period.dto';
 import { SumobAuthService } from '../sumob-auth/sumob-auth.service';
+import { maskPersonalName } from '../../common/utils/mask-personal-name';
+import { shouldMaskPersonalNamesForViewer } from '../../common/utils/viewer-privacy';
+import type { RequestUser } from '../auth/decorators/current-user.decorator';
 
 /**
  * Library admin servisleri yalnızca rezervasyon/salon/masa/özel dönem
@@ -119,17 +122,20 @@ export class AdminService {
 
   // ── Reservations ───────────────────────────────────────────
 
-  async getReservations(query?: {
-    status?: string;
-    studentQuery?: string;
-    searchStudentNumber?: string;
-    nameQuery?: string;
-    searchFullName?: string;
-    dateYmd?: string;
-    date?: string;
-    page?: string;
-    limit?: string;
-  }): Promise<{
+  async getReservations(
+    query?: {
+      status?: string;
+      studentQuery?: string;
+      searchStudentNumber?: string;
+      nameQuery?: string;
+      searchFullName?: string;
+      dateYmd?: string;
+      date?: string;
+      page?: string;
+      limit?: string;
+    },
+    viewer?: RequestUser,
+  ): Promise<{
     items: Reservation[];
     page: number;
     limit: number;
@@ -200,6 +206,15 @@ export class AdminService {
     qb.skip((page - 1) * limit).take(limit);
 
     const [items, total] = await qb.getManyAndCount();
+
+    if (shouldMaskPersonalNamesForViewer(viewer)) {
+      for (const item of items) {
+        if (item.user?.fullName) {
+          item.user.fullName = maskPersonalName(item.user.fullName);
+        }
+      }
+    }
+
     return {
       items,
       page,
