@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, MoreThan, Repository } from 'typeorm';
+import { getNowInTurkeyFrame } from '../../common/utils/turkey-time';
 import { Hall, Table, TableLock, LockStatus, Reservation } from '../../database/entities';
 import { ReservationStatus } from '../../database/entities/reservation.entity';
 
@@ -40,9 +41,10 @@ export class StatisticsService {
   ) {}
 
   async getOverallOccupancy(): Promise<OverallStatistics> {
-    const now = new Date();
-    const today = new Date(now);
-    today.setHours(0, 0, 0, 0);
+    const now = getNowInTurkeyFrame();
+    const today = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
 
     // Aktif salonları al
     const halls = await this.hallRepository.find({
@@ -115,7 +117,7 @@ export class StatisticsService {
   }
 
   async getHallOccupancy(hallId: string): Promise<HallOccupancy> {
-    const now = new Date();
+    const now = getNowInTurkeyFrame();
 
     const hall = await this.hallRepository.findOne({
       where: { id: hallId, isActive: true },

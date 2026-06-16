@@ -31,6 +31,7 @@ import { SchedulesService } from '../schedules/schedules.service';
 import { HallAvailabilityService } from '../hall-availability/hall-availability.service';
 import { ReservationEventService } from './reservation-event.service';
 import { CreateReservationDto } from './dto';
+import { getNowInTurkeyFrame } from '../../common/utils/turkey-time';
 
 /** Sabit degerleri tek yerden yonetmek icin */
 const INITIAL_DURATION_HOURS = 1;
@@ -380,10 +381,12 @@ export class ReservationsService {
     todayReservationCount: number;
     operatingHours: { opening: string; closing: string; is24h: boolean };
   }> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const nowTr = getNowInTurkeyFrame();
+    const today = new Date(
+      Date.UTC(nowTr.getUTCFullYear(), nowTr.getUTCMonth(), nowTr.getUTCDate()),
+    );
     const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
 
     const todayReservations = await this.reservationRepository.find({
       where: {
@@ -395,7 +398,7 @@ export class ReservationsService {
     });
 
     const activeReservation = await this.findActiveReservation(userId);
-    const hours = await this.schedulesService.getOperatingHoursForDate(new Date());
+    const hours = await this.schedulesService.getOperatingHoursForDate(getNowInTurkeyFrame());
 
     let canReserve = true;
     let canExtend = false;
@@ -635,9 +638,6 @@ export class ReservationsService {
    * Karsilastirmalari ayni referans eksenine almak icin now'u TZ offseti kadar kaydirir.
    */
   private getNowInDbLocalFrame(): Date {
-    const now = new Date();
-    const tzOffsetMs =
-      this.configService.get<number>('app.tzOffsetHours', 3) * 60 * 60 * 1000;
-    return new Date(now.getTime() + tzOffsetMs);
+    return getNowInTurkeyFrame();
   }
 }

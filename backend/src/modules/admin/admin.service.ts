@@ -469,10 +469,8 @@ export class AdminService {
       throw new NotFoundException('Ozel donem bulunamadi.');
     }
 
-    const nextStartDate =
-      dto.startDate ?? schedule.startDate.toISOString().slice(0, 10);
-    const nextEndDate =
-      dto.endDate ?? schedule.endDate.toISOString().slice(0, 10);
+    const nextStartDate = dto.startDate ?? this.toYmd(schedule.startDate);
+    const nextEndDate = dto.endDate ?? this.toYmd(schedule.endDate);
     this.validateDateRange(nextStartDate, nextEndDate);
     await this.ensureNoActivePeriodOverlap(nextStartDate, nextEndDate, id);
 
@@ -528,6 +526,19 @@ export class AdminService {
 
     await this.scheduleRepository.remove(schedule);
     return { message: 'Ozel donem silindi.' };
+  }
+
+  /** TypeORM date kolonları bazen string döner; mobil/web her zaman YYYY-MM-DD gönderir. */
+  private toYmd(value: Date | string): string {
+    if (value instanceof Date) {
+      return value.toISOString().slice(0, 10);
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      const match = /^(\d{4}-\d{2}-\d{2})/.exec(trimmed);
+      if (match) return match[1];
+    }
+    throw new BadRequestException('Gecersiz tarih degeri.');
   }
 
   private validateDateRange(startDate: string, endDate: string): void {

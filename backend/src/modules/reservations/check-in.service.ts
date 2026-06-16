@@ -16,6 +16,7 @@ import {
   ReservationLogEvent,
 } from '../../database/entities';
 import { CheckInDto, CheckInResponseDto } from './dto';
+import { getNowInTurkeyFrame } from '../../common/utils/turkey-time';
 import { ReservationEventService } from './reservation-event.service';
 import { isWithinRadius } from '../../common/utils/geo.util';
 
@@ -95,10 +96,7 @@ export class CheckInService {
     // DB'deki startTime/qrDeadline, TIMESTAMP WITHOUT TIME ZONE kolonunda yerel Turkey
     // saati (UTC+3) olarak saklanir; Node.js new Date() ise UTC doner. Karsilastirmayi
     // ayni "naive-UTC" perspektife getirmek icin now'u TZ offseti kadar ileri aliriz.
-    const now = new Date();
-    const tzOffsetMs =
-      this.configService.get<number>('app.tzOffsetHours', 3) * 60 * 60 * 1000;
-    const nowLocal = new Date(now.getTime() + tzOffsetMs);
+    const nowLocal = getNowInTurkeyFrame();
 
     if (nowLocal < reservation.startTime) {
       throw new BadRequestException(CHECK_IN_ERRORS.TOO_EARLY);
@@ -135,7 +133,7 @@ export class CheckInService {
         reservation,
         checkInDto,
         hallFromDb,
-        now,
+        nowLocal,
       );
     }
 
@@ -147,7 +145,7 @@ export class CheckInService {
       reservation,
       checkInDto,
       hall,
-      now,
+      nowLocal,
     );
   }
 

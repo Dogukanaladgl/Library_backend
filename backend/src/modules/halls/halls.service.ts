@@ -10,6 +10,12 @@ import {
   ReservationStatus,
   SchedulePeriodKind,
 } from '../../database/entities';
+import {
+  getNowInTurkeyFrame,
+  getTodayYmdInTurkey,
+  toWallClockIso,
+  turkeyWallClockDate,
+} from '../../common/utils/turkey-time';
 import { CreateHallDto, UpdateHallDto } from './dto';
 import { SchedulesService } from '../schedules/schedules.service';
 import { HallAvailabilityService } from '../hall-availability/hall-availability.service';
@@ -242,17 +248,17 @@ export class HallsService {
     }>;
   }> {
     const hall = await this.findWithTables(hallId);
-    const now = new Date();
+    const now = getNowInTurkeyFrame();
 
     let year: number, month: number, day: number;
     if (dateStr) {
       [year, month, day] = dateStr.split('-').map(Number);
     } else {
-      year = now.getFullYear();
-      month = now.getMonth() + 1;
-      day = now.getDate();
+      year = now.getUTCFullYear();
+      month = now.getUTCMonth() + 1;
+      day = now.getUTCDate();
     }
-    const queryDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+    const queryDate = turkeyWallClockDate(year, month, day);
     const ymd = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 
     const hours = await this.schedulesService.getOperatingHoursForDate(queryDate);
@@ -287,8 +293,8 @@ export class HallsService {
       }> = [];
 
       for (let h = openH; h < closeH; h++) {
-        const slotStart = new Date(year, month - 1, day, h, 0, 0, 0);
-        const slotEnd = new Date(year, month - 1, day, h + 1, 0, 0, 0);
+        const slotStart = turkeyWallClockDate(year, month, day, h, 0, 0);
+        const slotEnd = turkeyWallClockDate(year, month, day, h + 1, 0, 0);
 
         const slotGraceDeadline = new Date(
           slotStart.getTime() + LATE_RESERVATION_GRACE_MINUTES * 60 * 1000,
@@ -328,8 +334,8 @@ export class HallsService {
           isAvailable: boolean;
           blockedUntil?: string;
         } = {
-          startTime: slotStart.toISOString(),
-          endTime: slotEnd.toISOString(),
+          startTime: toWallClockIso(slotStart),
+          endTime: toWallClockIso(slotEnd),
           isAvailable,
         };
 
@@ -337,7 +343,9 @@ export class HallsService {
           const blockEnd = conflictingLock?.lockEnd ?? conflictingReservation?.endTime;
           if (blockEnd) {
             slot.blockedUntil =
-              blockEnd instanceof Date ? blockEnd.toISOString() : String(blockEnd);
+              blockEnd instanceof Date
+                ? toWallClockIso(blockEnd)
+                : String(blockEnd);
           }
         }
 

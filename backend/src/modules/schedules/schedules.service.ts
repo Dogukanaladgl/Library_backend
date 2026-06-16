@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThanOrEqual, MoreThanOrEqual } from 'typeorm';
+import { getNowInTurkeyFrame } from '../../common/utils/turkey-time';
 import {
   OperatingSchedule,
   ScheduleType,
@@ -30,10 +31,12 @@ export class SchedulesService {
   }
 
   async findCurrent(): Promise<OperatingSchedule | null> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = getNowInTurkeyFrame();
+    const queryDate = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+    );
 
-    return this.findEffectiveScheduleByDate(today);
+    return this.findEffectiveScheduleByDate(queryDate);
   }
 
   async findOne(id: string): Promise<OperatingSchedule> {
