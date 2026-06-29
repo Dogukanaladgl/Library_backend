@@ -6,7 +6,7 @@
 export const config = {
   // Uygulama
   NODE_ENV: 'production',
-  PORT: '3000',
+  PORT: '8081',
   API_PREFIX: 'api/v1',
   TZ_OFFSET_HOURS: '3',
 
