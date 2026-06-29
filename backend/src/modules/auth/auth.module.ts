@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AuthController } from './auth.controller';
+import { PanelAuthModule } from '../panel-auth/panel-auth.module';
 
 /**
- * SUMOB entegrasyonu sonrası JWT / Passport / UserSession / library profil
- * okuma mantığı tamamen kaldırıldı. Kimlik doğrulama [SumobAuthModule]
- * üzerinden header tabanlı yapılır; `/auth/me` SUMOB sonucunu olduğu gibi
- * döner.
+ * `/auth/me` → DualAuthGuard (SUMOB header veya panel Bearer JWT).
+ * Panel login → [PanelAuthModule] `/auth/panel/login`.
  */
 @Module({
+  imports: [PanelAuthModule],
   controllers: [AuthController],
 })
 export class AuthModule {}

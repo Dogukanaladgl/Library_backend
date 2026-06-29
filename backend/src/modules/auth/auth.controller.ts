@@ -6,7 +6,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UserProfileDto } from './dto';
-import { SumobAuthGuard } from '../sumob-auth/sumob-auth.guard';
+import { DualAuthGuard } from '../panel-auth/guards/dual-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
 import type { RequestUser } from './decorators/current-user.decorator';
 import type { UserRole } from '../../database/entities';
@@ -21,7 +21,7 @@ import type { UserRole } from '../../database/entities';
 @Controller('auth')
 export class AuthController {
   @Get('me')
-  @UseGuards(SumobAuthGuard)
+  @UseGuards(DualAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Oturumdaki kullanıcı bilgisi (SUMOB userKey/deviceKey ile)',
