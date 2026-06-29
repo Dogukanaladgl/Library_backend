@@ -20,7 +20,8 @@ LABEL org.opencontainers.image.title="kutuphane-backend" \
       org.opencontainers.image.source="https://github.com/Selcuk-Dijital/kutuphane-backend"
 
 ENV NODE_ENV=production \
-    PORT=8081
+    PORT=8081 \
+    NODE_EXTRA_CA_CERTS=/app/certs/selcuk-api-ca.pem
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs && \

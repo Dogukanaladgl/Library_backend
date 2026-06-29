@@ -19,7 +19,11 @@ export interface SelcukHttpRequestOptions {
   tlsInsecure?: boolean;
 }
 
-const EXTRA_CA_BUNDLE = path.join(process.cwd(), 'certs', 'selcuk-api-ca.pem');
+const CERT_CANDIDATES = [
+  path.join(process.cwd(), 'certs', 'selcuk-api-ca.pem'),
+  path.join(__dirname, '..', '..', '..', 'certs', 'selcuk-api-ca.pem'),
+  process.env.NODE_EXTRA_CA_CERTS ?? '',
+].filter(Boolean);
 
 let cachedExtraCa: Buffer[] | null | undefined;
 
@@ -27,14 +31,18 @@ function loadExtraCaCerts(): Buffer[] {
   if (cachedExtraCa !== undefined) {
     return cachedExtraCa ?? [];
   }
-  try {
-    if (fs.existsSync(EXTRA_CA_BUNDLE)) {
-      cachedExtraCa = [fs.readFileSync(EXTRA_CA_BUNDLE)];
-      return cachedExtraCa;
+
+  for (const candidate of CERT_CANDIDATES) {
+    try {
+      if (fs.existsSync(candidate)) {
+        cachedExtraCa = [fs.readFileSync(candidate)];
+        return cachedExtraCa;
+      }
+    } catch {
+      // sonraki adaya gec
     }
-  } catch {
-    // bundle yoksa varsayılan TLS davranışı
   }
+
   cachedExtraCa = null;
   return [];
 }
