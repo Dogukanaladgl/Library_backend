@@ -33,7 +33,7 @@ USER nestjs
 EXPOSE 8081
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
-  CMD node -e "require('http').get('http://127.0.0.1:8081/api/docs', (r) => { r.resume(); process.exit(r.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1))"
+  CMD node -e "const p=process.env.PORT||8081; require('http').get('http://127.0.0.1:'+p+'/api/docs', (r) => { r.resume(); process.exit(r.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1))"
 
 # Not: seed komutu kaldirildi. Veritabanindaki veri olduğu gibi korunur;
 # random masa/QR üretimi yapilmaz. Manuel import gerekiyorsa imajda elle

@@ -1,4 +1,4 @@
-# Yeni sunucu deploy compose dosyasi.
+# Sunucu deploy compose dosyasi.
 # DB harici bir Postgres sunucusunda calisir (172.16.64.110). Redis kullanilmiyor.
 services:
   kutuphane-api:
@@ -6,13 +6,21 @@ services:
     container_name: kutuphane-api
     restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "3000:3000"
     environment:
       NODE_ENV: production
-      PORT: "8081"
+      PORT: "3000"
       DB_HOST: 172.16.64.110
       DB_PORT: 5432
       DB_USERNAME: kutuphane
       DB_PASSWORD: kut52upha33ne59282
-      DB_DATABASE: "Kutuphane"
+      DB_DATABASE: Kutuphane
       DATABASE_URL: "postgresql://kutuphane:kut52upha33ne59282@172.16.64.110:5432/Kutuphane"
+    networks:
+      - default
+      - university-shared
+
+networks:
+  university-shared:
+    name: university_university-network
+    external: true
