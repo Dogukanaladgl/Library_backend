@@ -17,10 +17,7 @@ export default registerAs('selcukApi', () => ({
   locale: process.env.SELUK_API_LOCALE || 'tr-TR',
   channel: parseInt(process.env.SELUK_API_CHANNEL || '0', 10),
   deviceToken: process.env.SELUK_API_DEVICE_TOKEN || 'string',
-  requestTimeoutMs: parseInt(
-    process.env.SELUK_API_TIMEOUT_MS || '30000',
-    10,
-  ),
+  requestTimeoutMs: parseInt(process.env.SELUK_API_TIMEOUT_MS || '30000', 10),
   /** true ise TLS doğrulaması kapatılır (yalnızca acil durum) */
   tlsInsecure: process.env.SELUK_API_TLS_INSECURE === 'true',
   permissionOperation: parseInt(

@@ -1,5 +1,4 @@
-# Sunucu deploy compose dosyasi.
-# DB harici bir Postgres sunucusunda calisir (172.16.64.110). Redis kullanilmiyor.
+# Sunucu deploy — tum config imaj icinde (env.defaults.ts). Ek env gerekmez.
 services:
   kutuphane-api:
     image: ghcr.io/selcuk-dijital/kutuphane-backend:latest
@@ -7,15 +6,6 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
-    environment:
-      NODE_ENV: production
-      PORT: "3000"
-      DB_HOST: 172.16.64.110
-      DB_PORT: 5432
-      DB_USERNAME: kutuphane
-      DB_PASSWORD: kut52upha33ne59282
-      DB_DATABASE: Kutuphane
-      DATABASE_URL: "postgresql://kutuphane:kut52upha33ne59282@172.16.64.110:5432/Kutuphane"
     networks:
       - default
       - university-shared

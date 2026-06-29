@@ -20,7 +20,7 @@ LABEL org.opencontainers.image.title="kutuphane-backend" \
       org.opencontainers.image.source="https://github.com/Selcuk-Dijital/kutuphane-backend"
 
 ENV NODE_ENV=production \
-    PORT=8081
+    PORT=3000
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs && \
@@ -32,7 +32,7 @@ COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 COPY --chown=nestjs:nodejs certs ./certs
 
 USER nestjs
-EXPOSE 8081
+EXPOSE 3000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD node -e "const p=process.env.PORT||8081; require('http').get('http://127.0.0.1:'+p+'/api/docs', (r) => { r.resume(); process.exit(r.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1))"

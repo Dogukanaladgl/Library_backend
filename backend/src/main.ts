@@ -26,7 +26,9 @@ async function bootstrap() {
   );
 
   // CORS
-  const corsOrigins = configService.get<string[]>('app.corsOrigins', ['http://localhost:5173']);
+  const corsOrigins = configService.get<string[]>('app.corsOrigins', [
+    'http://localhost:5173',
+  ]);
   app.enableCors({
     origin: corsOrigins,
     credentials: true,
@@ -36,22 +38,14 @@ async function bootstrap() {
   const swaggerEnabled = configService.get<boolean>('app.swaggerEnabled', true);
   if (swaggerEnabled) {
     const config = new DocumentBuilder()
-      .setTitle('Kütüphane Rezervasyon API')
-      .setDescription(
-        `
-        ## Selçuk Üniversitesi Kütüphane Masa Rezervasyon Sistemi
-        
-        Bu API, kütüphane masa rezervasyonu, QR check-in ve doluluk takibi işlemlerini yönetir.
-        
-        ### Özellikler
-        - 🎫 Masa rezervasyonu (1-3 saat)
-        - 📱 QR kod ile check-in
-        - 📍 Konum doğrulama
-        - 🔔 Bildirim sistemi
-        - 📊 Doluluk istatistikleri
-        `,
+      .setTitle(
+        configService.get<string>(
+          'app.swaggerTitle',
+          'Kutuphane Rezervasyon API',
+        ),
       )
-      .setVersion('1.1.0-session-autoclose')
+      .setDescription(configService.get<string>('app.swaggerDescription', ''))
+      .setVersion(configService.get<string>('app.swaggerVersion', '1.0'))
       .addBearerAuth()
       .addTag('auth', 'Kimlik doğrulama işlemleri')
       .addTag('halls', 'Salon işlemleri')

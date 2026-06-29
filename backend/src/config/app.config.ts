@@ -49,5 +49,10 @@ export default registerAs('app', () => ({
 
   // Swagger
   swaggerEnabled: process.env.SWAGGER_ENABLED !== 'false',
+  swaggerTitle: process.env.SWAGGER_TITLE || 'Kutuphane Rezervasyon API',
+  swaggerDescription:
+    process.env.SWAGGER_DESCRIPTION ||
+    'Selcuk Universitesi Kutuphane Masa Rezervasyon Sistemi',
+  swaggerVersion: process.env.SWAGGER_VERSION || '1.0',
 }));
 
