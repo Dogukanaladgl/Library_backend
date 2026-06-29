@@ -23,11 +23,13 @@ ENV NODE_ENV=production \
     PORT=8081
 
 RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nestjs
+    adduser --system --uid 1001 nestjs && \
+    apk add --no-cache ca-certificates
 
 COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --prod --frozen-lockfile --ignore-scripts
 COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
+COPY --chown=nestjs:nodejs certs ./certs
 
 USER nestjs
 EXPOSE 8081

@@ -1,6 +1,8 @@
+import * as fs from 'node:fs';
 import * as http from 'node:http';
 import * as https from 'node:https';
 import * as tls from 'node:tls';
+import * as path from 'node:path';
 import { URL } from 'node:url';
 
 export interface SelcukHttpResponse {
@@ -17,27 +19,48 @@ export interface SelcukHttpRequestOptions {
   tlsInsecure?: boolean;
 }
 
+const EXTRA_CA_BUNDLE = path.join(process.cwd(), 'certs', 'selcuk-api-ca.pem');
+
+let cachedExtraCa: Buffer[] | null | undefined;
+
+function loadExtraCaCerts(): Buffer[] {
+  if (cachedExtraCa !== undefined) {
+    return cachedExtraCa ?? [];
+  }
+  try {
+    if (fs.existsSync(EXTRA_CA_BUNDLE)) {
+      cachedExtraCa = [fs.readFileSync(EXTRA_CA_BUNDLE)];
+      return cachedExtraCa;
+    }
+  } catch {
+    // bundle yoksa varsayılan TLS davranışı
+  }
+  cachedExtraCa = null;
+  return [];
+}
+
 /**
- * Node.js varsayılan `fetch` üniversite sertifika zincirini doğrulayamayabilir
- * (UNABLE_TO_VERIFY_LEAF_SIGNATURE). Windows/macOS sistem CA deposu burada kullanılır.
+ * apiservices.selcuk.edu.tr ara sertifikasını TLS handshake'te göndermiyor;
+ * Node.js Sectigo R36/R46 zincirini varsayılan CA deposunda bulamayınca
+ * "unable to verify the first certificate" hatası verir.
  */
 function resolveTlsOptions(tlsInsecure?: boolean): https.RequestOptions {
   if (tlsInsecure) {
     return { rejectUnauthorized: false };
   }
 
-  try {
-    const systemCerts = tls.getCACertificates('system') ?? [];
-    const defaultCerts = tls.getCACertificates('default') ?? [];
-    const merged = [...defaultCerts, ...systemCerts];
-    if (merged.length > 0) {
-      return { ca: merged };
-    }
-  } catch {
-    // Node < 19.6: getCACertificates yoksa varsayılan TLS davranışı
+  const extraCa = loadExtraCaCerts();
+  if (extraCa.length === 0) {
+    return {};
   }
 
-  return {};
+  try {
+    const defaultCerts = tls.getCACertificates('default') ?? [];
+    const systemCerts = tls.getCACertificates('system') ?? [];
+    return { ca: [...defaultCerts, ...systemCerts, ...extraCa] };
+  } catch {
+    return { ca: extraCa };
+  }
 }
 
 export function selcukHttpRequest(
