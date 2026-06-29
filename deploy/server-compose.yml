@@ -1,4 +1,4 @@
-# Sunucu deploy — tum config imaj icinde (env.defaults.ts). Ek env gerekmez.
+# Sunucu deploy — config imajda (env.defaults.ts); compose env port/DB icin acik tutulur.
 services:
   kutuphane-api:
     image: ghcr.io/selcuk-dijital/kutuphane-backend:latest
@@ -6,6 +6,15 @@ services:
     restart: unless-stopped
     ports:
       - "8081:8081"
+    environment:
+      NODE_ENV: production
+      PORT: "8081"
+      DB_HOST: 172.16.64.110
+      DB_PORT: 5432
+      DB_USERNAME: kutuphane
+      DB_PASSWORD: kut52upha33ne59282
+      DB_DATABASE: Kutuphane
+      DATABASE_URL: "postgresql://kutuphane:kut52upha33ne59282@172.16.64.110:5432/Kutuphane"
     networks:
       - default
       - university-shared
