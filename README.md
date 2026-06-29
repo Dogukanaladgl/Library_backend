@@ -284,9 +284,39 @@ Workflow başarısız olursa image push edilmez ve sunucuda güncelleme yapılma
 
 ### GHCR Paket Ayarları (ilk kurulum)
 
-1. GitHub repo → **Settings** → **Actions** → **General** → **Workflow permissions**: **Read and write permissions** seçili olmalı.
-2. İlk push sonrası **Packages** sekmesinde `kutuphane-backend` paketi oluşur.
-3. Sunucunun auth olmadan çekebilmesi için paketi **Public** yapın **veya** sunucuda bir kez GHCR login yapın:
+**Selcuk-Dijital org** repo ayarlarında "Read and write permissions" seçeneği kilitli olabilir (org politikası). Bu durumda `GITHUB_TOKEN` ile push yapılamaz; aşağıdaki PAT yöntemini kullanın.
+
+#### 1. Personal Access Token oluştur
+
+GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)**
+
+Yeni token, scope'lar:
+- `write:packages`
+- `read:packages`
+- `repo` (private repo ise)
+
+Token'ı kopyala.
+
+#### 2. Repo secret ekle
+
+`Selcuk-Dijital/kutuphane-backend` → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+
+| Name | Value |
+|------|-------|
+| `GHCR_TOKEN` | az önce oluşturduğun PAT |
+
+#### 3. Workflow'u tetikle
+
+`main`'e push veya Actions'tan **Re-run**.
+
+#### Org admin varsa (alternatif)
+
+Org → **Settings** → **Actions** → **General** → **Workflow permissions** → **Read and write permissions** → Save. Bu açılırsa `GITHUB_TOKEN` yeterli olur; PAT gerekmez.
+
+#### 403 devam ederse
+
+- https://github.com/orgs/Selcuk-Dijital/packages → `kutuphane-backend` → **Package settings** → **Manage Actions access** → repo'ya **Write** ver
+- Sunucu pull için paketi **Public** yap veya sunucuda GHCR login yap:
 
 ```bash
 echo "<GITHUB_PAT_read:packages>" | docker login ghcr.io -u <github-kullanici> --password-stdin
