@@ -32,6 +32,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { DeskModule } from './modules/desk/desk.module';
 import { SumobAuthModule } from './modules/sumob-auth/sumob-auth.module';
+import { SelcukApiModule } from './modules/selcuk-api/selcuk-api.module';
+import { PanelAuthModule } from './modules/panel-auth/panel-auth.module';
 
 @Module({
   imports: [
@@ -88,6 +90,8 @@ import { SumobAuthModule } from './modules/sumob-auth/sumob-auth.module';
 
     // Uygulama Modülleri
     SumobAuthModule,
+    SelcukApiModule,
+    PanelAuthModule,
     AuthModule,
     HallsModule,
     TablesModule,

@@ -20,7 +20,15 @@ export const config = {
   DB_LOGGING: 'false',
 
   JWT_SECRET: 'selcuk-university-library-jwt-prod-2026-xK8vNq3mZ7',
-  JWT_EXPIRES_IN: '7d',
+  JWT_EXPIRES_IN: '8h',
+  JWT_REFRESH_EXPIRES_IN: '7d',
+
+  SELUK_API_BASE_URL: 'https://apiservices.selcuk.edu.tr',
+  SELUK_API_LOCALE: 'tr-TR',
+  SELUK_API_CHANNEL: '0',
+  SELUK_API_DEVICE_TOKEN: 'string',
+  SELUK_API_TIMEOUT_MS: '30000',
+
   QR_SECRET: 'selcuk-library-qr-prod-2026-pR9wLm4nBv',
 
   CORS_ORIGINS:
@@ -39,6 +47,10 @@ export const config = {
 } as const;
 
 for (const [key, value] of Object.entries(config)) {
+  // .env içinde DATABASE_URL= (boş) → DB_HOST/DB_PORT kullanılsın; prod URL enjekte edilmesin
+  if (key === 'DATABASE_URL' && process.env[key] === '') {
+    continue;
+  }
   if (process.env[key] === undefined || process.env[key] === '') {
     process.env[key] = value;
   }

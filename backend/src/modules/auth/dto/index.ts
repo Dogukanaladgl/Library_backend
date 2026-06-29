@@ -1,19 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, MinLength } from 'class-validator';
 import { UserRole } from '../../../database/entities';
-
-export class LoginDto {
-  @ApiProperty({ example: '200000001', description: 'Öğrenci numarası' })
-  @IsString()
-  @IsNotEmpty({ message: 'Öğrenci numarası boş olamaz.' })
-  studentNumber: string;
-
-  @ApiProperty({ example: 'Student123!', description: 'Şifre' })
-  @IsString()
-  @IsNotEmpty({ message: 'Şifre boş olamaz.' })
-  @MinLength(6, { message: 'Şifre en az 6 karakter olmalıdır.' })
-  password: string;
-}
 
 export class UserProfileDto {
   @ApiProperty({
@@ -22,16 +8,16 @@ export class UserProfileDto {
   })
   id: string;
 
-  @ApiProperty({ example: '200000001', description: 'SUMOB kurumNo.' })
+  @ApiProperty({ example: '200000001', description: 'Kurum / öğrenci numarası.' })
   studentNumber: string;
 
   @ApiProperty({
     example: 'Ahmet Yılmaz',
-    description: 'SUMOB üzerinden taze çekilen ad soyad.',
+    description: 'Kütüphane veritabanındaki ad soyad.',
   })
   fullName: string;
 
-  @ApiProperty({ enum: UserRole, example: UserRole.STUDENT })
+  @ApiProperty({ enum: UserRole, example: UserRole.STAFF })
   role: UserRole;
 
   @ApiProperty({ required: false, nullable: true, example: 'user@selcuk.edu.tr' })
@@ -54,17 +40,9 @@ export class UserProfileDto {
     required: false,
     example: false,
     description:
-      'Yarı zamanlı salon görevlisi bayrağı; true ise öğrenci ekranı + staff paneli erişimi olur.',
+      'Yarı zamanlı salon görevlisi bayrağı; mobil uygulama için kullanılır.',
   })
   isStaffMember?: boolean;
-}
-
-export class LoginResponseDto {
-  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
-  accessToken: string;
-
-  @ApiProperty({ type: UserProfileDto })
-  user: UserProfileDto;
 }
 
 export class MessageResponseDto {

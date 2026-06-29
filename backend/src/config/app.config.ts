@@ -7,7 +7,8 @@ export default registerAs('app', () => ({
   
   // JWT
   jwtSecret: process.env.JWT_SECRET || 'default-secret-key',
-  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  jwtExpiresIn: process.env.JWT_EXPIRES_IN || '8h',
+  jwtRefreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   
   // QR
   qrSecret: process.env.QR_SECRET || 'default-qr-secret',

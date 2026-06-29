@@ -22,13 +22,23 @@ import {
 
   HttpStatus,
 
+  UseGuards,
+
 } from '@nestjs/common';
 
-import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
 
 import { AdminService } from './admin.service';
 
 import { HallAvailabilityService } from '../hall-availability/hall-availability.service';
+
+import { DualAuthGuard } from '../panel-auth/guards/dual-auth.guard';
+
+import { RolesGuard } from '../auth/guards/roles.guard';
+
+import { Roles } from '../auth/decorators/roles.decorator';
+
+import { UserRole } from '../../database/entities';
 
 import {
 
@@ -57,6 +67,12 @@ import {
 
 
 @ApiTags('admin')
+
+@ApiBearerAuth()
+
+@UseGuards(DualAuthGuard, RolesGuard)
+
+@Roles(UserRole.ADMIN, UserRole.STAFF)
 
 @Controller('admin')
 

@@ -1,3 +1,9 @@
+import { config as loadDotenv } from 'dotenv';
+import { resolve } from 'path';
+
+// .env önce yüklenmeli; aksi halde env.defaults production DB'ye zorlar
+loadDotenv({ path: resolve(process.cwd(), '.env') });
+
 import './env.defaults';
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
