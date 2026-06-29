@@ -12,9 +12,18 @@ RUN pnpm run build
 
 FROM node:22-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV=production PORT=8081
 
-RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nestjs
+ARG VERSION=dev
+LABEL org.opencontainers.image.title="kutuphane-backend" \
+      org.opencontainers.image.description="Selçuk Üniversitesi Kütüphane Rezervasyon API" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.source="https://github.com/Selcuk-Dijital/kutuphane-backend"
+
+ENV NODE_ENV=production \
+    PORT=8081
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nestjs
 
 COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --prod --frozen-lockfile --ignore-scripts
@@ -22,6 +31,10 @@ COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 
 USER nestjs
 EXPOSE 8081
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+  CMD node -e "require('http').get('http://127.0.0.1:8081/api/docs', (r) => { r.resume(); process.exit(r.statusCode < 500 ? 0 : 1); }).on('error', () => process.exit(1))"
+
 # Not: seed komutu kaldirildi. Veritabanindaki veri olduğu gibi korunur;
 # random masa/QR üretimi yapilmaz. Manuel import gerekiyorsa imajda elle
 # `node dist/database/seeds/import-qr-from-csv.js` benzeri çağırılabilir.

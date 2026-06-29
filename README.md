@@ -263,6 +263,69 @@ Ayrı ayrı alan: `DB_HOST=postgres`, `DB_PORT=5432`, `DB_USERNAME=kutuphane`, `
 
 ---
 
+## 🐳 Docker Image Build ve Publish (CI/CD)
+
+`main` branch'ine her push veya merge işleminde GitHub Actions otomatik olarak Docker image'ını build eder ve [GitHub Container Registry (GHCR)](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) üzerine push eder.
+
+### Workflow
+
+Dosya: [`.github/workflows/docker.yml`](.github/workflows/docker.yml)
+
+| Özellik | Açıklama |
+|---------|----------|
+| Tetikleyici | `main` branch'ine push / merge |
+| Registry | `ghcr.io/selcuk-dijital/kutuphane-backend` |
+| Tag'ler | `latest` ve commit SHA (ör. `abc123def456...`) |
+| Platform | `linux/amd64` |
+| Build | Docker Buildx + GitHub Actions layer cache |
+| Deploy | Workflow deploy yapmaz; sunucuda manuel güncelleme |
+
+Workflow başarısız olursa image push edilmez ve sunucuda güncelleme yapılmamalıdır.
+
+### GHCR Paket Ayarları (ilk kurulum)
+
+1. GitHub repo → **Settings** → **Actions** → **General** → **Workflow permissions**: **Read and write permissions** seçili olmalı.
+2. İlk push sonrası **Packages** sekmesinde `kutuphane-backend` paketi oluşur.
+3. Sunucunun auth olmadan çekebilmesi için paketi **Public** yapın **veya** sunucuda bir kez GHCR login yapın:
+
+```bash
+echo "<GITHUB_PAT_read:packages>" | docker login ghcr.io -u <github-kullanici> --password-stdin
+```
+
+### Sunucu Deploy
+
+Sunucuda `deploy/server-compose.yml` dosyasını `docker-compose.yml` olarak kullanın (ilk kurulumda bir kez kopyalayın):
+
+```bash
+mkdir -p ~/kutuphane
+cp deploy/server-compose.yml ~/kutuphane/docker-compose.yml
+cd ~/kutuphane
+```
+
+Her yeni release sonrası yalnızca şu komutlar yeterlidir:
+
+```bash
+docker compose pull
+docker compose up -d --force-recreate
+```
+
+Image adresi: `ghcr.io/selcuk-dijital/kutuphane-backend:latest`
+
+Belirli bir commit'e dönmek için `deploy/server-compose.yml` içinde `latest` yerine ilgili SHA tag'ini kullanın:
+
+```yaml
+image: ghcr.io/selcuk-dijital/kutuphane-backend:<commit-sha>
+```
+
+### Yerel Image Build (opsiyonel)
+
+```bash
+docker build -t kutuphane-backend:local ./backend
+docker run --rm -p 8081:8081 --env-file backend/.env kutuphane-backend:local
+```
+
+---
+
 ## 📚 API Dokümantasyonu
 
 API dokümantasyonuna Swagger UI üzerinden erişebilirsiniz:
