@@ -65,7 +65,7 @@ export const config = {
 
   // CORS
   CORS_ORIGINS:
-    'https://kutuphaneservice.selcuk.edu.tr,http://193.255.245.32:8081,http://localhost:8081,http://localhost:5173,http://localhost:3000',
+    'https://kutuphaneadmin.selcuk.edu.tr,https://kutuphaneservice.selcuk.edu.tr,http://193.255.245.32:8081,http://localhost:8081,http://localhost:5173,http://localhost:3000',
 
   // Swagger
   SWAGGER_ENABLED: 'true',
