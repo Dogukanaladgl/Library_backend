@@ -45,12 +45,13 @@ export class PanelAuthService {
     const { studentNumber, panelRole, universityAccessToken } =
       await this.verifyUniversityCredentials(dto);
 
-    const libUser = await this.findLibraryUser(studentNumber, dto.userName);
+    let libUser = await this.findLibraryUser(studentNumber, dto.userName);
 
     if (!libUser) {
-      throw new ForbiddenException(
-        'Kütüphane sisteminde kayıtlı kullanıcı bulunamadı.',
-      );
+      // Yetki University'de (HasPermission) verildiği için, yerel `users` satırı yoksa
+      // burada otomatik oluşturulur (mobil `ensureLibraryUserId` ile aynı nötr
+      // varsayılanlar). Böylece University tek doğru kaynak olur; manuel kayıt gerekmez.
+      libUser = await this.provisionLibraryUser(studentNumber);
     }
 
     if (!libUser.isActive) {
@@ -156,6 +157,34 @@ export class PanelAuthService {
     }
 
     return null;
+  }
+
+  /**
+   * University yetkisi doğrulanmış fakat kütüphanede kaydı olmayan kullanıcı için
+   * yerel `users` satırını lazy oluşturur. Mobil akıştaki `ensureLibraryUserId` ile
+   * AYNI nötr varsayılanlar kullanılır — hiçbir yerel ayrıcalık (staff/superadmin)
+   * verilmez; panel erişim tier'ı her istekte University HasPermission'dan doğrulanır,
+   * yani DB `role`/flag'leri yetki kapısı DEĞİLDİR. Satır yalnızca rezervasyon FK'si içindir.
+   */
+  private async provisionLibraryUser(studentNumber: string): Promise<User> {
+    try {
+      return await this.userRepository.save(
+        this.userRepository.create({
+          studentNumber,
+          fullName: studentNumber, // gerçek ad için ileride University GetProfile eklenebilir
+          role: UserRole.STUDENT,
+          isActive: true,
+          isSuperAdmin: false,
+          isStaffMember: false,
+          passwordHash: '',
+        }),
+      );
+    } catch (error) {
+      // Eşzamanlı ilk giriş yarışı: unique(student_number) ihlali → mevcut satırı getir
+      const existing = await this.findLibraryUser(studentNumber, studentNumber);
+      if (existing) return existing;
+      throw error;
+    }
   }
 
   private async issueAccessToken(
