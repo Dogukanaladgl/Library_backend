@@ -176,7 +176,6 @@ export class PanelAuthService {
           isActive: true,
           isSuperAdmin: false,
           isStaffMember: false,
-          passwordHash: '',
         }),
       );
     } catch (error) {

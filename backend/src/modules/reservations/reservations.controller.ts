@@ -55,8 +55,14 @@ export class ReservationsController {
   ) {
     // Rezervasyon FK için library satırı lazy provision edilir; library DB'de
     // user yönetimi yapılmaz, SADECE rezervasyona referans için satır vardır.
+    // fullName da geçilir: yetkili ekranları `users.full_name`'den okuduğu için
+    // ad kaydedilmezse rezervasyon listesinde numara görünür.
     const userId =
-      user.id || (await this.sumobAuth.ensureLibraryUserId(user.studentNumber));
+      user.id ||
+      (await this.sumobAuth.ensureLibraryUserId(
+        user.studentNumber,
+        user.fullName,
+      ));
     return this.reservationsService.create(userId, createDto);
   }
 
