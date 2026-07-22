@@ -97,9 +97,9 @@ export class SumobAuthService {
 
     const fullName = buildFullName(row) || studentNumber;
 
-    // Read-only: var olan library satırını oku; yoksa varsayılan rol student.
-    // Hiçbir koşulda burada yazma yapmıyoruz — provisioning sadece rezervasyon
-    // yaratılırken (write path) gerçekleşir.
+    // Var olan library satırını oku; yoksa varsayılan rol student.
+    // Provisioning (yeni satır yaratma) burada YAPILMAZ — o yalnızca write
+    // path'te (rezervasyon) gerçekleşir.
     const libUser = await this.userRepository.findOne({
       where: { studentNumber },
     });
@@ -107,6 +107,27 @@ export class SumobAuthService {
       throw new UnauthorizedException(
         'Kullanıcı kütüphane sisteminde devre dışı bırakılmış.',
       );
+    }
+
+    // Ad senkronu (self-heal): `users.full_name` eskiden kurumNo olarak
+    // yazılıyordu; bu yüzden yetkili ekranlarında (rezervasyon listesi, masa
+    // snapshot) isim yerine numara görünüyordu. SUMOB'dan gelen gerçek ad
+    // farklıysa satırı tek seferlik düzeltir — yeni satır YARATMAZ, sadece
+    // mevcut adı tazeler. Düzeldikten sonra koşul sağlanmaz, tekrar yazmaz.
+    if (
+      libUser &&
+      fullName &&
+      fullName !== studentNumber &&
+      libUser.fullName !== fullName
+    ) {
+      try {
+        await this.userRepository.update({ id: libUser.id }, { fullName });
+        libUser.fullName = fullName;
+      } catch (e) {
+        this.logger.warn(
+          `full_name senkronu başarısız (${studentNumber}): ${String(e)}`,
+        );
+      }
     }
 
     const resolved: ResolvedSumobUser = {
@@ -160,9 +181,16 @@ export class SumobAuthService {
   /**
    * Rezervasyon FK'si için library satırını lazy provision eder. Sadece write
    * path'lerden (rezervasyon yaratma) çağrılır; read path'lerinde çağırma.
-   * Profil verisi YAZILMAZ — sadece studentNumber + varsayılan rol kaydedilir.
+   *
+   * [fullName] verilirse `users.full_name`'e gerçek ad yazılır. Yetkili
+   * ekranları (rezervasyon listesi, masa snapshot) bu kolondan okuduğu için
+   * ad yoksa numara görünür. Verilmezse geriye dönük olarak studentNumber.
    */
-  async ensureLibraryUserId(studentNumber: string): Promise<string> {
+  async ensureLibraryUserId(
+    studentNumber: string,
+    fullName?: string,
+  ): Promise<string> {
+    const realName = fullName?.trim();
     const existing = await this.userRepository.findOne({
       where: { studentNumber },
     });
@@ -172,18 +200,27 @@ export class SumobAuthService {
           'Kullanıcı kütüphane sisteminde devre dışı bırakılmış.',
         );
       }
+      // Eski kayıtlarda ad kurumNo olarak yazılmıştı; gerçek ad geldiyse düzelt.
+      if (realName && realName !== studentNumber && existing.fullName !== realName) {
+        try {
+          await this.userRepository.update(
+            { id: existing.id },
+            { fullName: realName },
+          );
+        } catch (e) {
+          this.logger.warn(
+            `full_name güncellenemedi (${studentNumber}): ${String(e)}`,
+          );
+        }
+      }
       return existing.id;
     }
     const created = this.userRepository.create({
       studentNumber,
-      // fullName SUMOB'tan geldiği için library'de saklanmaz; geriye dönük
-      // şema uyumluluğu için studentNumber yazılır.
-      fullName: studentNumber,
+      fullName: realName || studentNumber,
       role: UserRole.STUDENT,
       isActive: true,
       isSuperAdmin: false,
-      /** Postgres'te kolon NOT NULL olabilir; SUMOB oturumunda parola kullanılmaz. */
-      passwordHash: '',
     });
     const saved = await this.userRepository.save(created);
     return saved.id;

@@ -59,15 +59,17 @@ export class AdminService {
   // doğrudan staff paneline yönlendirilebilir. `is_staff_member` liste / silme işlevi için tutulur.
 
   async listStaffMembers(): Promise<
-    Array<{ studentNumber: string; createdAt: Date }>
+    Array<{ studentNumber: string; fullName: string; createdAt: Date }>
   > {
     const rows = await this.userRepository.find({
       where: { isStaffMember: true },
-      select: ['studentNumber', 'createdAt'],
+      select: ['studentNumber', 'fullName', 'createdAt'],
       order: { createdAt: 'DESC' },
     });
     return rows.map((u) => ({
       studentNumber: u.studentNumber,
+      // Ad henüz senkronlanmadıysa (eski kayıt) numaraya düşer.
+      fullName: u.fullName || u.studentNumber,
       createdAt: u.createdAt,
     }));
   }

@@ -20,19 +20,6 @@ export class User {
   @Column({ name: 'student_number', length: 50, unique: true })
   studentNumber: string;
 
-  /**
-   * Eski parola-tabanlı login kaldırıldı; oturum doğrulaması artık SUMOB
-   * (`sp_find_user`) üzerinden yapılıyor. Alan geriye dönük şema uyumluluğu
-   * için tutuluyor; yeni satırlar boş string olarak yazılır.
-   */
-  @Column({
-    type: 'varchar',
-    name: 'password_hash',
-    length: 255,
-    nullable: true,
-  })
-  passwordHash: string | null;
-
   @Column({ name: 'full_name', length: 150 })
   fullName: string;
 
