@@ -53,6 +53,10 @@ async function bootstrap() {
       .addTag('reservations', 'Rezervasyon işlemleri')
       .addTag('statistics', 'İstatistik işlemleri')
       .addTag('schedules', 'Çalışma takvimi işlemleri')
+      .addTag(
+        'Ortak-Login-Web',
+        'Ortak kampüs web (University JWT, cookie selcuk_jwt)',
+      )
       .build();
 
     const document = SwaggerModule.createDocument(app, config);

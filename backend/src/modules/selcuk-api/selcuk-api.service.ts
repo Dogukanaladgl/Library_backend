@@ -18,6 +18,7 @@ import { SelcukAuthException } from './selcuk-auth.exception';
 import type {
   SelcukHasPermissionRequest,
   SelcukLoginValue,
+  SelcukProfileValue,
   SelcukRefreshRequest,
   SelcukServiceResponse,
 } from './selcuk-api.types';
@@ -324,6 +325,44 @@ export class SelcukApiService {
         `AuthCheck/IsAuthenticate başarısız: ${(error as Error).message}`,
       );
       return false;
+    }
+  }
+
+  /**
+   * GET /api/v1/Auth/GetProfile — alanlar `value` altındadır.
+   * Fail-closed: doğrulanamayan / boş profil null döner.
+   */
+  async getProfile(accessToken: string): Promise<SelcukProfileValue | null> {
+    try {
+      const response = await this.get<SelcukServiceResponse<SelcukProfileValue>>(
+        '/api/v1/Auth/GetProfile',
+        accessToken,
+        { softEnvelope: true },
+      );
+
+      if (!response || typeof response !== 'object') {
+        return null;
+      }
+
+      if (response.isSucceeded !== true || !response.value) {
+        this.logger.warn(
+          `Auth/GetProfile olumsuz: ${JSON.stringify(response).slice(0, 400)}`,
+        );
+        return null;
+      }
+
+      return response.value;
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedException ||
+        error instanceof ServiceUnavailableException
+      ) {
+        throw error;
+      }
+      this.logger.warn(
+        `Auth/GetProfile başarısız: ${(error as Error).message}`,
+      );
+      return null;
     }
   }
 

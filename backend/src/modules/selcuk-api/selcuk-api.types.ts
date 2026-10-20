@@ -33,3 +33,15 @@ export interface SelcukHasPermissionRequest {
   codes: string[];
   operation: number;
 }
+
+/** GET /api/v1/Auth/GetProfile → value */
+export interface SelcukProfileValue {
+  id?: number;
+  name?: string;
+  surname?: string;
+  username?: string;
+  email?: string;
+  phone?: string;
+  corporateRegistrationNo?: string;
+  userType?: string;
+}

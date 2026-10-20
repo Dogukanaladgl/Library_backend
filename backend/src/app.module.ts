@@ -34,6 +34,7 @@ import { DeskModule } from './modules/desk/desk.module';
 import { SumobAuthModule } from './modules/sumob-auth/sumob-auth.module';
 import { SelcukApiModule } from './modules/selcuk-api/selcuk-api.module';
 import { PanelAuthModule } from './modules/panel-auth/panel-auth.module';
+import { OrtakWebModule } from './modules/ortak-web/ortak-web.module';
 
 @Module({
   imports: [
@@ -92,6 +93,7 @@ import { PanelAuthModule } from './modules/panel-auth/panel-auth.module';
     SumobAuthModule,
     SelcukApiModule,
     PanelAuthModule,
+    OrtakWebModule,
     AuthModule,
     HallsModule,
     TablesModule,
